@@ -14,6 +14,7 @@ filesets:
       - src/regfile.sv: {file_type: systemVerilogSource}
       - src/cpu_top.sv: {file_type: systemVerilogSource}
       - src/peri/uart_rx.sv: {file_type: systemVerilogSource}
+      - src/peri/bootloader.sv: {file_type: systemVerilogSource}
 
   tb_uart_rx:
     files:

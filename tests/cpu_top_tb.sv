@@ -41,8 +41,7 @@ module cpu_top_tb;
     wire [31:0] id_imm    = dut.id_io.imm;
     wire [31:0] id_pc     = dut.id_io.pc;
     wire [31:0] if_instr  = dut.if_io.instr;
-    wire        loading   = dut.if_io.loading;
-    wire        halted    = dut.pc_io.halted;
+    wire        loading   = dut.bl.loading;
 
     // ------------------------------------------------------------
     // Clock generation
@@ -72,17 +71,33 @@ module cpu_top_tb;
         end
     endtask
 
-    // Send an entire binary file over UART
+    // Send an entire binary file via bootloader 'W' command
     task send_binary_file(input string filename);
         integer fd, r;
         logic [7:0] byte_val;
         integer count;
+        integer fsize;
         begin
+            // First pass: get file size
             fd = $fopen(filename, "rb");
             if (fd == 0) begin
                 $display("FATAL: Could not open %s", filename);
                 $finish;
             end
+            fsize = 0;
+            while (!$feof(fd)) begin
+                r = $fread(byte_val, fd);
+                if (r == 1) fsize++;
+            end
+            $fclose(fd);
+
+            // Send 'W' command header
+            send_uart_byte(8'h57);  // 'W'
+            send_uart_byte(fsize[15:8]);  // length high
+            send_uart_byte(fsize[7:0]);   // length low
+
+            // Second pass: send data bytes
+            fd = $fopen(filename, "rb");
             count = 0;
             while (!$feof(fd)) begin
                 r = $fread(byte_val, fd);
@@ -92,23 +107,20 @@ module cpu_top_tb;
                 end
             end
             $fclose(fd);
-            $display("[TB] Sent %0d bytes from %s", count, filename);
+            $display("[TB] Sent W command: %0d bytes from %s", count, filename);
         end
     endtask
 
     // ------------------------------------------------------------
-    // Step the CPU one instruction and wait for it to halt
+    // Step the CPU one instruction via bootloader 'S' command
+    // The step pulse fires inside send_uart_byte (UART RX latches mid-stop-bit),
+    // so by the time send returns, the pipeline has already advanced.
+    // Just wait a few cycles for IF/ID to settle.
     // ------------------------------------------------------------
     task step_one;
         begin
-            @(posedge clk);
-            pin_step = 0;  // press (active-low)
-            @(posedge clk);
-            pin_step = 1;  // release
-            // Wait for the step to complete (halted goes low then high)
-            @(posedge clk);
-            wait (halted);
-            @(posedge clk);
+            send_uart_byte(8'h53);  // 'S'
+            repeat (4) @(posedge clk);
         end
     endtask
 
@@ -160,8 +172,6 @@ module cpu_top_tb;
     // Test sequence
     // ------------------------------------------------------------
     initial begin
-        $dumpfile("cpu_top_tb_dump.vcd");
-        $dumpvars(0, cpu_top_tb);
         $display("=== CPU Top Testbench ===");
 
         // Wait for reset to deassert
@@ -173,8 +183,8 @@ module cpu_top_tb;
         $display("\n--- Phase 1: Loading program via UART ---");
         send_binary_file(BIN_FILE);
 
-        // Wait for idle timeout to transition to FETCHING
-        $display("[TB] Waiting for IF stage to finish loading...");
+        // Wait for bootloader to finish writing
+        $display("[TB] Waiting for bootloader to finish...");
         wait (!loading);
         $display("[TB] Loading complete, CPU ready.");
 
@@ -321,10 +331,10 @@ module cpu_top_tb;
     end
 
     // ------------------------------------------------------------
-    // Watchdog: UART ~10ms + idle timeout ~100ms + margin
+    // Watchdog
     // ------------------------------------------------------------
     initial begin
-        #150ms;
+        #50ms;
         $display("FATAL: Watchdog timeout — simulation hung.");
         $dumpflush;
         $finish;

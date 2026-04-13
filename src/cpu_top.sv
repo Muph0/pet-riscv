@@ -28,6 +28,25 @@ module cpu_top (
         .data_valid(uart_valid)
     );
 
+    // --- Bootloader ---
+    logic [31:0] bl_mem_addr;
+    logic [ 7:0] bl_mem_data;
+    logic        bl_mem_write;
+    logic        bl_step;
+    logic        bl_loading;
+
+    bootloader bl (
+        .clk       (clk27),
+        .reset,
+        .uart_data,
+        .uart_valid,
+        .mem_addr  (bl_mem_addr),
+        .mem_data  (bl_mem_data),
+        .mem_write (bl_mem_write),
+        .step      (bl_step),
+        .loading   (bl_loading)
+    );
+
     // --- Pipeline interfaces ---
     pc_stage_io pc_io ();
     if_stage_io if_io ();
@@ -35,9 +54,7 @@ module cpu_top (
 
     // --- PC stage ---
     assign pc_io.reset       = reset;
-    assign pc_io.enable      = !if_io.loading;
-    assign pc_io.step        = !pin_step;  // active-low button
-    assign pc_io.run         = '0;  // step mode only for now
+    assign pc_io.advance     = bl_step;
     assign pc_io.pc_redirect = '0;
     assign pc_io.pc_target   = '0;
 
@@ -47,10 +64,12 @@ module cpu_top (
     );
 
     // --- IF stage ---
-    assign if_io.reset      = reset;
-    assign if_io.stall      = pc_io.halted;
-    assign if_io.uart_data  = uart_data;
-    assign if_io.uart_valid = uart_valid;
+    assign if_io.reset    = reset;
+    assign if_io.stall    = !bl_step;
+    assign if_io.loading  = bl_loading;
+    assign if_io.bl_addr  = bl_mem_addr;
+    assign if_io.bl_data  = bl_mem_data;
+    assign if_io.bl_write = bl_mem_write;
 
     if_stage ifs (
         .clk (clk27),
@@ -60,7 +79,7 @@ module cpu_top (
 
     // --- ID stage ---
     assign id_io.reset = reset;
-    assign id_io.stall = pc_io.halted;
+    assign id_io.stall = !bl_step;
 
     id_stage ids (
         .clk (clk27),
@@ -69,9 +88,9 @@ module cpu_top (
     );
 
     // --- Status LEDs ---
-    assign led5   = !if_io.loading;  // lit when done loading
-    assign led4   = !pc_io.halted;  // lit when running
-    assign pin_p9 = !if_io.loading;
+    assign led5   = !bl_loading;   // lit when done loading
+    assign led4   = bl_step;          // blinks when stepping
+    assign pin_p9 = !bl_loading;
 
     // --- Reset ---
     always_ff @(posedge clk27) begin
