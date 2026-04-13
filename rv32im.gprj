@@ -1,0 +1,18 @@
+<?xml version="1" encoding="UTF-8"?>
+<!DOCTYPE gowin-fpga-project>
+<Project>
+    <Template>FPGA</Template>
+    <Version>5</Version>
+    <Device name="GW2A-18C" pn="GW2A-LV18PG256C8/I7">gw2a18c-011</Device>
+    <FileList>
+        <File path="src/cpu_top.sv" type="file.verilog" enable="1"/>
+        <File path="src/memory/bsram.sv" type="file.verilog" enable="1"/>
+        <File path="src/memory/mem_pkg.sv" type="file.verilog" enable="1"/>
+        <File path="src/peri/uart_rx.sv" type="file.verilog" enable="1"/>
+        <File path="src/regfile.sv" type="file.verilog" enable="1"/>
+        <File path="src/stage01_pc.sv" type="file.verilog" enable="1"/>
+        <File path="src/stage02_if.sv" type="file.verilog" enable="1"/>
+        <File path="src/stage03_id.sv" type="file.verilog" enable="1"/>
+        <File path="src/rv32im.cst" type="file.cst" enable="1"/>
+    </FileList>
+</Project>

@@ -1,0 +1,113 @@
+CAPI=2:
+
+name: ::rv32im:0.1.0
+description: RV32IM CPU core
+
+filesets:
+  rtl:
+    files:
+      - src/memory/mem_pkg.sv: {file_type: systemVerilogSource}
+      - src/memory/bsram.sv: {file_type: systemVerilogSource}
+      - src/stage01_pc.sv: {file_type: systemVerilogSource}
+      - src/stage02_if.sv: {file_type: systemVerilogSource}
+      - src/stage03_id.sv: {file_type: systemVerilogSource}
+      - src/regfile.sv: {file_type: systemVerilogSource}
+      - src/cpu_top.sv: {file_type: systemVerilogSource}
+      - src/peri/uart_rx.sv: {file_type: systemVerilogSource}
+
+  tb_uart_rx:
+    files:
+      - tests/uart_rx_tb.sv: {file_type: systemVerilogSource}
+
+  tb_pc:
+    files:
+      - tests/stage01_pc_tb.sv: {file_type: systemVerilogSource}
+
+  tb_if:
+    files:
+      - tests/stage02_if_tb.sv: {file_type: systemVerilogSource}
+
+  tb_cpu_top:
+    files:
+      - tests/cpu_top_tb.sv: {file_type: systemVerilogSource}
+
+  tb_cpu_top_data:
+    files:
+      - tests/sample1.bin: {file_type: user, copyto: sample1.bin}
+
+  script_files:
+    files:
+      - scripts/move_waves.sh: {file_type: user}
+
+scripts:
+  move_waves:
+    cmd: [sh, ../../../scripts/move_waves.sh]
+    filesets: [script_files]
+
+targets:
+  default:
+    filesets:
+      - rtl
+
+  sim_pc:
+    description: Run PC stage testbench
+    default_tool: modelsim
+    toplevel: pc_stage_tb
+    filesets:
+      - rtl
+      - tb_pc
+    tools:
+      modelsim:
+        vlog_options:
+          - -sv
+    hooks:
+      post_run: [move_waves]
+
+  sim_if:
+    description: Run IF stage testbench
+    default_tool: modelsim
+    toplevel: if_stage_tb
+    filesets:
+      - rtl
+      - tb_if
+    tools:
+      modelsim:
+        vlog_options:
+          - -sv
+    hooks:
+      post_run: [move_waves]
+
+  sim_uart_rx:
+    description: Run UART RX testbench
+    default_tool: modelsim
+    toplevel: uart_rx_tb
+    filesets:
+      - rtl
+      - tb_uart_rx
+    tools:
+      modelsim:
+        vlog_options:
+          - -sv
+    hooks:
+      post_run: [move_waves]
+    hooks:
+      post_run: [move_waves]
+
+  sim_cpu_top:
+    description: Run CPU top integration testbench
+    default_tool: modelsim
+    toplevel: cpu_top_tb
+    filesets:
+      - rtl
+      - tb_cpu_top
+      - tb_cpu_top_data
+    tools:
+      modelsim:
+        vlog_options:
+          - -sv
+        vsim_options:
+          - "-c"
+          - "-wlf cpu_top_tb.wlf"
+          - "-do 'log -r /*; run -all; quit'"
+    hooks:
+      post_run: [move_waves]

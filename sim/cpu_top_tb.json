@@ -1,0 +1,81 @@
+{
+  "extensionVersion": "1.5.2",
+  "fileName": "c:\\Users\\kytka\\source\\learning\\FPGA_gowin\\rv32im\\sim\\cpu_top_tb.fst",
+  "markerTime": 303680624,
+  "altMarkerTime": null,
+  "displayTimeUnit": "ns",
+  "selectedSignal": {
+    "name": "cpu_top_tb.loading",
+    "msb": -1,
+    "lsb": -1
+  },
+  "zoomRatio": 1.1113649461704021e-8,
+  "scrollLeft": 7173698831,
+  "displayedSignals": [
+    {
+      "dataType": "netlist-variable",
+      "netlistId": 151,
+      "name": "cpu_top_tb.dut.clk27",
+      "numberFormat": "binary",
+      "colorIndex": 0,
+      "rowHeight": 1,
+      "verticalScale": 1,
+      "nameType": "fullPath",
+      "customName": "clk27",
+      "renderType": "binary",
+      "valueLinkCommand": ""
+    },
+    {
+      "dataType": "netlist-variable",
+      "netlistId": 152,
+      "name": "cpu_top_tb.dut.pin_rx",
+      "numberFormat": "binary",
+      "colorIndex": 0,
+      "rowHeight": 1,
+      "verticalScale": 1,
+      "nameType": "fullPath",
+      "customName": "pin_rx",
+      "renderType": "binary",
+      "valueLinkCommand": ""
+    },
+    {
+      "dataType": "netlist-variable",
+      "netlistId": 159,
+      "name": "cpu_top_tb.dut.uart_data",
+      "numberFormat": "hexadecimal",
+      "colorIndex": 7,
+      "rowHeight": 1,
+      "verticalScale": 1,
+      "nameType": "fullPath",
+      "customName": "uart_data",
+      "renderType": "multiBit",
+      "valueLinkCommand": ""
+    },
+    {
+      "dataType": "netlist-variable",
+      "netlistId": 160,
+      "name": "cpu_top_tb.dut.uart_valid",
+      "numberFormat": "binary",
+      "colorIndex": 0,
+      "rowHeight": 1,
+      "verticalScale": 1,
+      "nameType": "fullPath",
+      "customName": "uart_valid",
+      "renderType": "binary",
+      "valueLinkCommand": ""
+    },
+    {
+      "dataType": "netlist-variable",
+      "netlistId": 135,
+      "name": "cpu_top_tb.loading",
+      "numberFormat": "binary",
+      "colorIndex": 0,
+      "rowHeight": 1,
+      "verticalScale": 1,
+      "nameType": "fullPath",
+      "customName": "loading",
+      "renderType": "binary",
+      "valueLinkCommand": ""
+    }
+  ]
+}

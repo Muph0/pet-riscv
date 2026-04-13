@@ -1,0 +1,13 @@
+files.txt
+/.vscode
+
+# Build artifacts (FuseSoC / Gowin IDE)
+/build/
+/impl/
+
+# IDE user settings
+*.gprj.user
+
+# Simulation outputs
+/sim/*
+!/sim/*.json

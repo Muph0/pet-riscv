@@ -1,0 +1,3 @@
+interface bus;
+
+endinterface  //bus
