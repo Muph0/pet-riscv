@@ -16,6 +16,9 @@ module regfile (
 
     logic [31:0] data[31:1];
 
+    // Zero-init registers
+    initial for (int i = 1; i < 32; i++) data[i] = '0;
+
     // Async read
     always_comb begin
         src1_data = src1 == 5'd0 ? '0 : (write && src1 == dest) ? dest_data : data[src1];

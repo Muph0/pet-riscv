@@ -1,8 +1,6 @@
 interface stageWB_face;
     import mem_pkg::*;
 
-    //
-
     // Writeback to register file (directly from WB combinational logic)
     logic        write;
     logic [ 4:0] rd;

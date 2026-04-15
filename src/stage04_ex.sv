@@ -4,6 +4,9 @@ interface stageEX_face;
     // Pipeline control
     logic             reset;
     logic             enable;
+    // Forwarding
+    logic             fw_mem;
+    logic             fw_wb;
 
     // ALU result
     logic      [31:0] alu_result;

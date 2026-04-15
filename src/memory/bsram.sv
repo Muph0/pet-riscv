@@ -14,7 +14,10 @@ module bsram32
 );
 
     localparam int DEPTH = BYTES / 4;
-    logic   [31:0] memory       [0:DEPTH-1];
+    logic [31:0] memory[0:DEPTH-1];
+
+    // Zero-init memory
+    initial for (int i = 0; i < DEPTH; i++) memory[i] = '0;
 
     // Internal signals for steering
     logic   [ 1:0] addr_lsb_reg;
@@ -33,7 +36,7 @@ module bsram32
     end
 
     // --- 2. Synchronous Write & Read Port ---
-    always_ff @(posedge clk) begin
+    always @(posedge clk) begin
         // Perform masked write
         if (write_en) begin
             if (byte_en[0]) memory[address>>2][7:0] <= data_in[7:0];

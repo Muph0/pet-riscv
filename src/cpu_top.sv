@@ -31,6 +31,7 @@ module cpu_top (
     logic [ 7:0] bl_mem_data;
     logic        bl_mem_write;
     logic        bl_step;
+    logic        bl_run;
     logic        bl_loading;
 
     bootloader bl (
@@ -42,6 +43,7 @@ module cpu_top (
         .mem_data (bl_mem_data),
         .mem_write(bl_mem_write),
         .step     (bl_step),
+        .run      (bl_run),
         .loading  (bl_loading)
     );
 
@@ -49,7 +51,7 @@ module cpu_top (
     pipeline pipe (
         .clk     (clk27),
         .reset,
-        .halt    (!bl_step),
+        .halt    (!bl_step && !bl_run),
         .loading (bl_loading),
         .bl_addr (bl_mem_addr),
         .bl_data (bl_mem_data),

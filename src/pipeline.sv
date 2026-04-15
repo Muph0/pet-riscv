@@ -1,13 +1,13 @@
 module pipeline (
-    input clk,
-    input reset,
-    input halt,
+    input logic clk,
+    input logic reset,
+    input logic halt,
 
     // Bootloader memory port
-    input        loading,
-    input [31:0] bl_addr,
-    input [ 7:0] bl_data,
-    input        bl_write
+    input logic        loading,
+    input logic [31:0] bl_addr,
+    input logic [ 7:0] bl_data,
+    input logic        bl_write
 );
 
     // --- Pipeline interfaces ---
@@ -22,7 +22,7 @@ module pipeline (
     assign pc_io.pc_redirect = '0;
     assign pc_io.pc_target   = '0;
 
-    stagePC pcs (
+    stagePC sPC (
         .clk,
         .io(pc_io.in)
     );
@@ -33,14 +33,14 @@ module pipeline (
     assign if_io.bl_data  = bl_data;
     assign if_io.bl_write = bl_write;
 
-    stageIF ifs (
+    stageIF sIF (
         .clk,
         .io  (if_io.in),
         .prev(pc_io.prev)
     );
 
     // --- ID stage ---
-    stageID ids (
+    stageID sID (
         .clk,
         .io  (id_io.in),
         .prev(if_io.prev),
@@ -48,28 +48,28 @@ module pipeline (
     );
 
     // --- EX stage ---
-    stageEX exs (
+    stageEX sEX (
         .clk,
         .io (ex_io.in),
         .sID(id_io.prev)
     );
 
     // --- MEM stage ---
-    stageMEM mems (
+    stageMEM sMEM (
         .clk,
         .io  (mem_io.in),
         .prev(ex_io.prev)
     );
 
     // --- WB stage ---
-    stageWB wbs (
+    stageWB sWB (
         .clk,
         .io  (wb_io.in),
         .prev(mem_io.prev)
     );
 
     // --- Hazard control ---
-    hazard_ctl hzd (
+    hazard_ctl hazard (
         .clk,
         .reset,
         .halt,

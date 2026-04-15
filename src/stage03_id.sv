@@ -6,14 +6,19 @@ interface stageID_face;
     logic             reset;
     logic             enable;
 
+    // Forwarding
+    logic             fw_ex;
+    logic             fw_mem;
+    logic             fw_wb;
+
     // ALU operands
     logic      [31:0] opA;
     logic      [31:0] opB;
-    logic      [31:0] op_mem;  // memory write data
+    logic      [31:0] op_mem;  // data for memory write
 
     // ALU control
     logic      [ 2:0] alu_op;
-    logic             alu_negb_shar;
+    logic             alu_negb_shar;  // negate opB and arith shift
     logic             alu_mul;
 
     // Memory control

@@ -11,6 +11,8 @@ module hazard_ctl (
     stageWB_face.hazard  sWB
 );
 
+    assign sID.
+
     // Default: pass through reset and advance to all stages
     always_comb begin
         sPC.reset   = reset;

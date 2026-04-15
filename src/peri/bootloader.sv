@@ -1,10 +1,10 @@
 module bootloader (
-    input        clk,
-    input        reset,
+    input clk,
+    input reset,
 
     // UART interface
-    input  [7:0] uart_data,
-    input        uart_valid,
+    input [7:0] uart_data,
+    input       uart_valid,
 
     // Memory write port (directly drives IF stage BSRAM)
     output logic [31:0] mem_addr,
@@ -12,8 +12,9 @@ module bootloader (
     output logic        mem_write,
 
     // Pipeline control
-    output logic        step,
-    output logic        loading
+    output logic step,
+    output logic run,
+    output logic loading
 );
 
     typedef enum logic [2:0] {
@@ -23,9 +24,9 @@ module bootloader (
         S_WRITE_DATA
     } state_t;
 
-    state_t      state;
-    logic [15:0] byte_count;
-    logic [15:0] bytes_remaining;
+    state_t        state;
+    logic   [15:0] byte_count;
+    logic   [15:0] bytes_remaining;
 
     assign loading   = (state != S_IDLE);
     assign mem_write = (state == S_WRITE_DATA) && uart_valid;
@@ -39,14 +40,17 @@ module bootloader (
             mem_addr        <= '0;
             byte_count      <= '0;
             bytes_remaining <= '0;
+            run             <= '0;
         end else if (uart_valid) begin
             case (state)
                 S_IDLE: begin
                     case (uart_data)
-                        8'h57: // 'W'
-                            state <= S_WRITE_A1;
-                        8'h53: // 'S'
-                            step <= '1;
+                        8'h57:  // 'W'
+                        state <= S_WRITE_A1;
+                        8'h53:  // 'S'
+                        step <= '1;
+                        8'h52:  // 'R'
+                        run <= '1;
                         default: ;
                     endcase
                 end
@@ -57,17 +61,16 @@ module bootloader (
                 end
 
                 S_WRITE_A0: begin
-                    byte_count[7:0]  <= uart_data;
-                    bytes_remaining  <= {byte_count[15:8], uart_data};
-                    mem_addr         <= '0;
-                    state            <= S_WRITE_DATA;
+                    byte_count[7:0] <= uart_data;
+                    bytes_remaining <= {byte_count[15:8], uart_data};
+                    mem_addr        <= '0;
+                    state           <= S_WRITE_DATA;
                 end
 
                 S_WRITE_DATA: begin
                     mem_addr        <= mem_addr + 1'b1;
                     bytes_remaining <= bytes_remaining - 1'b1;
-                    if (bytes_remaining == 16'd1)
-                        state <= S_IDLE;
+                    if (bytes_remaining == 16'd1) state <= S_IDLE;
                 end
 
                 default: state <= S_IDLE;
