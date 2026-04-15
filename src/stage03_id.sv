@@ -40,15 +40,21 @@ interface stageID_face;
     logic      [31:0] pc;
     logic             wb_en;
 
+    // Branch/jump control
+    logic             is_branch;
+    logic             is_jump;
+    logic      [31:0] branch_target;
+
     modport in(
         input reset, enable, fw_sel1, fw_sel2, fw_data_ex, fw_data_mem, fw_data_wb,
         output opA, opB, op_mem, alu_op, alu_negb_shar, alu_mul,
                mem_mode, mem_width, rs1, rs2, rs1_next, rs2_next,
-               wb_en, rd, pc
+               wb_en, rd, pc, is_branch, is_jump, branch_target
     );
     modport prev(
         input opA, opB, op_mem, alu_op, alu_negb_shar, alu_mul,
-              mem_mode, mem_width, rs1, rs2, wb_en, rd, pc
+              mem_mode, mem_width, rs1, rs2, wb_en, rd, pc,
+              is_branch, is_jump, branch_target
     );
     modport hazard(
         input rs1_next, rs2_next, rd, mem_mode, wb_en,
@@ -157,12 +163,15 @@ module stageID
 
     // --- Control signal generation (combinational) ---
     logic [31:0] opA, opB, op_mem;
-    logic      [2:0] alu_op;
-    logic            alu_negb_shar;
-    logic            alu_mul;
-    logic            wb_en;
-    mem_mode_t       mem_mode;
-    width_t          mem_width;
+    logic      [ 2:0] alu_op;
+    logic             alu_negb_shar;
+    logic             alu_mul;
+    logic             wb_en;
+    logic             is_branch;
+    logic             is_jump;
+    logic      [31:0] branch_target;
+    mem_mode_t        mem_mode;
+    width_t           mem_width;
 
     always_comb begin
         // Defaults
@@ -173,6 +182,9 @@ module stageID
         alu_negb_shar = '0;
         alu_mul       = '0;
         wb_en         = (rd != 5'd0);
+        is_branch     = '0;
+        is_jump       = '0;
+        branch_target = '0;
         mem_mode      = MEM_IDLE;
         mem_width     = WIDTH_32;
 
@@ -195,9 +207,13 @@ module stageID
                 alu_op = 3'b000;  // ADD pc + imm
             end
             OP_JAL, OP_JALR: begin
-                opA    = prev.pc;
-                opB    = 32'd4;
+                opA = prev.pc;
+                opB = 32'd4;
                 alu_op = 3'b000;  // ADD pc + 4 (link address)
+                is_jump = 1'b1;
+                branch_target = (opcode_t'(opcode) == OP_JAL)
+                    ? prev.pc + imm
+                    : (fwd1 + imm) & ~32'h1;
             end
             OP_LOAD: begin
                 alu_op = 3'b000;  // ADD rs1 + imm (address)
@@ -211,8 +227,10 @@ module stageID
                 wb_en     = '0;
             end
             OP_BRANCH: begin
-                opB   = fwd2;
+                opB = fwd2;
                 wb_en = '0;
+                is_branch = 1'b1;
+                branch_target = prev.pc + imm;
             end
             OP_FENCE: begin
                 wb_en = '0;
@@ -240,6 +258,9 @@ module stageID
             io.rs2           <= '0;
             io.rd            <= '0;
             io.pc            <= '0;
+            io.is_branch     <= '0;
+            io.is_jump       <= '0;
+            io.branch_target <= '0;
         end else if (io.enable) begin
             io.opA           <= opA;
             io.opB           <= opB;
@@ -254,6 +275,9 @@ module stageID
             io.rs2           <= rs2;
             io.rd            <= rd;
             io.pc            <= prev.pc;
+            io.is_branch     <= is_branch;
+            io.is_jump       <= is_jump;
+            io.branch_target <= branch_target;
         end
     end
 

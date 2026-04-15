@@ -42,21 +42,29 @@ filesets:
     files:
       - tests/sample1.bin: {file_type: user, copyto: sample1.bin}
 
-  tb_cpu_top_fwd:
+  tb_cpu_fwd:
     files:
-      - tests/cpu_top_fwd_tb.sv: {file_type: systemVerilogSource}
+      - tests/cpu_fwd_tb.sv: {file_type: systemVerilogSource}
 
-  tb_cpu_top_fwd_data:
+  tb_cpu_fwd_data:
     files:
       - tests/sample_fw.bin: {file_type: user, copyto: sample_fw.bin}
 
-  tb_cpu_top_lw:
+  tb_cpu_lw:
     files:
-      - tests/cpu_top_lw_tb.sv: {file_type: systemVerilogSource}
+      - tests/cpu_lw_tb.sv: {file_type: systemVerilogSource}
 
-  tb_cpu_top_lw_data:
+  tb_cpu_lw_data:
     files:
       - tests/sample_lw.bin: {file_type: user, copyto: sample_lw.bin}
+
+  tb_cpu_fib:
+    files:
+      - tests/cpu_fib_tb.sv: {file_type: systemVerilogSource}
+
+  tb_cpu_fib_data:
+    files:
+      - tests/sample_fib.bin: {file_type: user, copyto: sample_fib.bin}
 
   script_files:
     files:
@@ -135,40 +143,59 @@ targets:
     hooks:
       post_run: [move_waves]
 
-  sim_cpu_top_fwd:
-    description: Run cpu_top forwarding testbench
+  sim_cpu_fwd:
+    description: Run cpu forwarding testbench
     default_tool: modelsim
-    toplevel: cpu_top_fwd_tb
+    toplevel: cpu_fwd_tb
     filesets:
       - rtl
-      - tb_cpu_top_fwd
-      - tb_cpu_top_fwd_data
+      - tb_cpu_fwd
+      - tb_cpu_fwd_data
     tools:
       modelsim:
         vlog_options:
           - -sv
         vsim_options:
           - "-c"
-          - "-wlf cpu_top_fwd_tb.wlf"
+          - "-wlf cpu_fwd_tb.wlf"
           - "-do 'log -r /*; run -all; quit'"
     hooks:
       post_run: [move_waves]
 
-  sim_cpu_top_lw:
-    description: Run cpu_top load-use hazard testbench
+  sim_cpu_lw:
+    description: Run cpu load-use hazard testbench
     default_tool: modelsim
-    toplevel: cpu_top_lw_tb
+    toplevel: cpu_lw_tb
     filesets:
       - rtl
-      - tb_cpu_top_lw
-      - tb_cpu_top_lw_data
+      - tb_cpu_lw
+      - tb_cpu_lw_data
     tools:
       modelsim:
         vlog_options:
           - -sv
         vsim_options:
           - "-c"
-          - "-wlf cpu_top_lw_tb.wlf"
+          - "-wlf cpu_lw_tb.wlf"
+          - "-do 'log -r /*; run -all; quit'"
+    hooks:
+      post_run: [move_waves]
+
+  sim_cpu_fib:
+    description: Run cpu Fibonacci branch testbench
+    default_tool: modelsim
+    toplevel: cpu_fib_tb
+    filesets:
+      - rtl
+      - tb_cpu_fib
+      - tb_cpu_fib_data
+    tools:
+      modelsim:
+        vlog_options:
+          - -sv
+        vsim_options:
+          - "-c"
+          - "-wlf cpu_fib_tb.wlf"
           - "-do 'log -r /*; run -all; quit'"
     hooks:
       post_run: [move_waves]

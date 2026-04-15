@@ -19,8 +19,8 @@ module pipeline (
     stageWB_face wb_io ();
 
     // --- PC stage ---
-    assign pc_io.pc_redirect = '0;
-    assign pc_io.pc_target   = '0;
+    assign pc_io.pc_redirect = ex_io.branch_taken;
+    assign pc_io.pc_target   = ex_io.branch_target[31:2];
 
     stagePC sPC (
         .clk,

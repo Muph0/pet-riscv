@@ -50,13 +50,18 @@ module hazard_ctl (
         else sID.fw_sel2 = 2'b00;
     end
 
+    // --- Branch flush ---
+    // When a branch is taken in EX, flush the two instructions
+    // that entered IF and ID after the branch.
+    wire flush = sEX.branch_taken;
+
     // Default: pass through reset and advance to all stages
     always_comb begin
         sPC.reset   = reset;
         sPC.advance = !halt && !load_stall;
-        sIF.reset   = reset;
+        sIF.reset   = reset || flush;
         sIF.enable  = !halt && !load_stall;
-        sID.reset   = reset || (!halt && load_stall);  // bubble on stall
+        sID.reset   = reset || flush || (!halt && load_stall);  // bubble on stall or flush
         sID.enable  = !halt && !load_stall;
         sEX.reset   = reset;
         sEX.enable  = !halt;

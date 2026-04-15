@@ -12,6 +12,10 @@ interface stageEX_face;
     logic      [31:0] alu_result;
     logic      [31:0] alu_result_comb;  // combinational (before pipeline reg)
 
+    // Branch (combinational, not registered)
+    logic             branch_taken;
+    logic      [31:0] branch_target;
+
     // Memory (passed through)
     logic      [31:0] op_mem;
     mem_mode_t        mem_mode;
@@ -28,10 +32,11 @@ interface stageEX_face;
 
     modport in(
         input reset, enable,
-        output alu_result, alu_result_comb, op_mem, mem_mode, mem_width, rs1, rs2, wb_en, rd, pc
+        output alu_result, alu_result_comb, branch_taken, branch_target,
+               op_mem, mem_mode, mem_width, rs1, rs2, wb_en, rd, pc
     );
     modport prev(input alu_result, op_mem, mem_mode, mem_width, rs1, rs2, wb_en, rd, pc);
-    modport hazard(input rs1, rs2, rd, wb_en, mem_mode, output reset, enable);
+    modport hazard(input rs1, rs2, rd, wb_en, mem_mode, branch_taken, output reset, enable);
 
 endinterface
 
@@ -55,6 +60,23 @@ module stageEX
     );
 
     assign io.alu_result_comb = result;
+
+    // --- Branch comparator (combinational) ---
+    logic branch_cond;
+    always_comb begin
+        case (sID.alu_op)
+            3'b000:  branch_cond = (sID.opA == sID.opB);  // BEQ
+            3'b001:  branch_cond = (sID.opA != sID.opB);  // BNE
+            3'b100:  branch_cond = ($signed(sID.opA) < $signed(sID.opB));  // BLT
+            3'b101:  branch_cond = !($signed(sID.opA) < $signed(sID.opB));  // BGE
+            3'b110:  branch_cond = (sID.opA < sID.opB);  // BLTU
+            3'b111:  branch_cond = !(sID.opA < sID.opB);  // BGEU
+            default: branch_cond = 1'b0;
+        endcase
+    end
+
+    assign io.branch_taken  = sID.is_jump || (sID.is_branch && branch_cond);
+    assign io.branch_target = sID.branch_target;
 
     // --- Pipeline register ---
     always_ff @(posedge clk) begin

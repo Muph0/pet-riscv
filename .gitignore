@@ -11,3 +11,5 @@ files.txt
 # Simulation outputs
 /sim/*
 !/sim/*.json
+
+*.bin
