@@ -2,8 +2,8 @@
 # Register x1 is used as the primary accumulator/test target
 
 # 1. Upper Immediates (Setting up base addresses/large constants)
-lui   x1, 74565          # x1 = 0x12345000
-auipc x2, 1              # x2 = PC + 0x1000
+lui   x1, 12345h         # x1 = 12345000h
+auipc x2, 1h             # x2 = PC + 1000h
 
 # 2. Immediate Arithmetic & Logic
 addi  x1, x1, -1         # x1 = x1 + (-1)

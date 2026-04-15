@@ -1,4 +1,4 @@
-interface pc_stage_io;
+interface stagePC_face;
 
     // ---- Inputs to the PC stage ----
     logic        reset;
@@ -14,22 +14,21 @@ interface pc_stage_io;
 
     modport in(input reset, advance, pc_redirect, pc_target, output pc, pc_next);
     modport prev(input pc, pc_next);
+    modport hazard(output reset, advance);
 
 endinterface
 
 
-module pc_stage (
+module stagePC (
     input clk,
-    pc_stage_io.in io
+    stagePC_face.in io
 );
 
     assign io.pc_next = io.pc_redirect ? {io.pc_target, 2'b00} : io.pc + 4;
 
     always_ff @(posedge clk) begin
-        if (io.reset)
-            io.pc <= '0;
-        else if (io.advance)
-            io.pc <= io.pc_next;
+        if (io.reset) io.pc <= '0;
+        else if (io.advance) io.pc <= io.pc_next;
     end
 
 endmodule

@@ -25,11 +25,10 @@ module bsram32
     logic   [ 3:0] byte_en;
     always_comb begin
         byte_en = 4'b0000;
-        case (width)
+        unique case (width)
             WIDTH_8:  byte_en = 4'b0001 << address[1:0];
             WIDTH_16: byte_en = address[1] ? 4'b1100 : 4'b0011;
             WIDTH_32: byte_en = 4'b1111;
-            default:  byte_en = 4'b1111;
         endcase
     end
 

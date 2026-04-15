@@ -1,30 +1,44 @@
 // ID stage I/O
-interface id_stage_io;
-
-    logic        reset;
+interface stageID_face;
+    import mem_pkg::*;
 
     // Pipeline control
-    logic        stall;
+    logic             reset;
+    logic             enable;
 
-    // Decoded fields
-    logic [ 6:0] opcode;
-    logic [ 4:0] rd;
-    logic [ 2:0] funct3;
-    logic [ 4:0] rs1;
-    logic [ 4:0] rs2;
-    logic [ 6:0] funct7;
-    logic [31:0] imm;
-    logic [31:0] pc;
+    // ALU operands
+    logic      [31:0] opA;
+    logic      [31:0] opB;
+    logic      [31:0] op_mem;  // memory write data
 
-    // Register file read data
-    logic [31:0] rs1_data;
-    logic [31:0] rs2_data;
+    // ALU control
+    logic      [ 2:0] alu_op;
+    logic             alu_negb_shar;
+    logic             alu_mul;
+
+    // Memory control
+    mem_mode_t        mem_mode;
+    width_t           mem_width;
+
+    // Register tracking
+    logic      [ 4:0] rs1;
+    logic      [ 4:0] rs2;
+
+    // Writeback
+    logic      [ 4:0] rd;
+    logic      [31:0] pc;
+    logic             wb_en;
 
     modport in(
-        input reset, stall,
-        output opcode, rd, funct3, rs1, rs2, funct7, imm, pc, rs1_data, rs2_data
+        input reset, enable,
+        output opA, opB, op_mem, alu_op, alu_negb_shar, alu_mul,
+               mem_mode, mem_width, rs1, rs2, wb_en, rd, pc
     );
-    modport prev(input opcode, rd, funct3, rs1, rs2, funct7, imm, pc, rs1_data, rs2_data);
+    modport prev(
+        input opA, opB, op_mem, alu_op, alu_negb_shar, alu_mul,
+              mem_mode, mem_width, rs1, rs2, wb_en, rd, pc
+    );
+    modport hazard(input rs1, rs2, rd, wb_en, output reset, enable);
 
 endinterface
 
@@ -45,10 +59,13 @@ typedef enum logic [6:0] {
 } opcode_t;
 
 
-module id_stage (
-    input                  clk,
-          id_stage_io.in   io,
-          if_stage_io.prev prev
+module stageID
+    import mem_pkg::*;
+(
+    input                   clk,
+          stageID_face.in   io,
+          stageIF_face.prev prev,
+          stageWB_face.id   wb
 );
 
     // --- Instruction field extraction (combinational) ---
@@ -89,37 +106,118 @@ module id_stage (
     end
 
     // --- Register file ---
+    logic [31:0] rs1_data, rs2_data;
+
     regfile regs (
         .clk,
-        .write    ('0),           // TODO: connect from WB stage
-        .dest     ('0),
-        .dest_data('0),
+        .write    (wb.write),
+        .dest     (wb.rd),
+        .dest_data(wb.rd_data),
         .src1     (rs1),
         .src2     (rs2),
-        .src1_data(io.rs1_data),
-        .src2_data(io.rs2_data)
+        .src1_data(rs1_data),
+        .src2_data(rs2_data)
     );
+
+    // --- Control signal generation (combinational) ---
+    logic [31:0] opA, opB, op_mem;
+    logic      [2:0] alu_op;
+    logic            alu_negb_shar;
+    logic            alu_mul;
+    logic            wb_en;
+    mem_mode_t       mem_mode;
+    width_t          mem_width;
+
+    always_comb begin
+        // Defaults
+        opA           = rs1_data;
+        opB           = imm;
+        op_mem        = rs2_data;
+        alu_op        = funct3;
+        alu_negb_shar = '0;
+        alu_mul       = '0;
+        wb_en         = (rd != 5'd0);
+        mem_mode      = MEM_IDLE;
+        mem_width     = WIDTH_32;
+
+        case (opcode_t'(opcode))
+            OP_REG: begin
+                opB           = rs2_data;
+                alu_negb_shar = funct7[5];  // SUB / SRA
+                alu_mul       = funct7[0];  // M-extension
+            end
+            OP_IMM: begin
+                // SRAI: funct7[5] selects arithmetic shift
+                if (funct3 == 3'b101) alu_negb_shar = funct7[5];
+            end
+            OP_LUI: begin
+                opA    = '0;
+                alu_op = 3'b000;  // ADD 0 + imm
+            end
+            OP_AUIPC: begin
+                opA    = prev.pc;
+                alu_op = 3'b000;  // ADD pc + imm
+            end
+            OP_JAL, OP_JALR: begin
+                opA    = prev.pc;
+                opB    = 32'd4;
+                alu_op = 3'b000;  // ADD pc + 4 (link address)
+            end
+            OP_LOAD: begin
+                alu_op = 3'b000;  // ADD rs1 + imm (address)
+                mem_mode = funct3[2] ? MEM_LOAD_USIG : MEM_LOAD_SIG;
+                mem_width = width_t'(funct3[1:0]);
+            end
+            OP_STORE: begin
+                alu_op    = 3'b000;  // ADD rs1 + imm (address)
+                mem_mode  = MEM_STORE;
+                mem_width = funct3[1:0] == 3 ? WIDTH_32 : width_t'(funct3[1:0]);
+                wb_en     = '0;
+            end
+            OP_BRANCH: begin
+                opB   = rs2_data;
+                wb_en = '0;
+            end
+            OP_FENCE: begin
+                wb_en = '0;
+            end
+            OP_SYSTEM: begin
+                wb_en = '0;
+            end
+            default: ;
+        endcase
+    end
 
     // --- Pipeline register ---
     always_ff @(posedge clk) begin
         if (io.reset) begin
-            io.opcode <= '0;
-            io.rd     <= '0;
-            io.funct3 <= '0;
-            io.rs1    <= '0;
-            io.rs2    <= '0;
-            io.funct7 <= '0;
-            io.imm    <= '0;
-            io.pc     <= '0;
-        end else if (!io.stall) begin
-            io.opcode <= opcode;
-            io.rd     <= rd;
-            io.funct3 <= funct3;
-            io.rs1    <= rs1;
-            io.rs2    <= rs2;
-            io.funct7 <= funct7;
-            io.imm    <= imm;
-            io.pc     <= prev.pc;
+            io.opA           <= '0;
+            io.opB           <= '0;
+            io.op_mem        <= '0;
+            io.alu_op        <= '0;
+            io.alu_negb_shar <= '0;
+            io.alu_mul       <= '0;
+            io.wb_en         <= '0;
+            io.mem_mode      <= MEM_IDLE;
+            io.mem_width     <= WIDTH_32;
+            io.rs1           <= '0;
+            io.rs2           <= '0;
+            io.rd            <= '0;
+            io.pc            <= '0;
+        end else if (io.enable) begin
+            io.opA           <= opA;
+            io.opB           <= opB;
+            io.op_mem        <= op_mem;
+            io.alu_op        <= alu_op;
+            io.alu_negb_shar <= alu_negb_shar;
+            io.alu_mul       <= alu_mul;
+            io.wb_en         <= wb_en;
+            io.mem_mode      <= mem_mode;
+            io.mem_width     <= mem_width;
+            io.rs1           <= rs1;
+            io.rs2           <= rs2;
+            io.rd            <= rd;
+            io.pc            <= prev.pc;
         end
     end
 

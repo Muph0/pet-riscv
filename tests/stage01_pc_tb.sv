@@ -1,9 +1,9 @@
-module pc_stage_tb;
+module stagePC_tb;
 
     reg clk;
 
-    pc_stage_io io ();
-    pc_stage dut (.io);
+    stagePC_face io ();
+    stagePC dut (.io);
 
     // 100MHz clock (10ns period)
     initial begin

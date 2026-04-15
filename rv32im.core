@@ -8,10 +8,16 @@ filesets:
     files:
       - src/memory/mem_pkg.sv: {file_type: systemVerilogSource}
       - src/memory/bsram.sv: {file_type: systemVerilogSource}
+      - src/alu.sv: {file_type: systemVerilogSource}
+      - src/regfile.sv: {file_type: systemVerilogSource}
       - src/stage01_pc.sv: {file_type: systemVerilogSource}
       - src/stage02_if.sv: {file_type: systemVerilogSource}
       - src/stage03_id.sv: {file_type: systemVerilogSource}
-      - src/regfile.sv: {file_type: systemVerilogSource}
+      - src/stage04_ex.sv: {file_type: systemVerilogSource}
+      - src/stage05_mem.sv: {file_type: systemVerilogSource}
+      - src/stage06_wb.sv: {file_type: systemVerilogSource}
+      - src/hazard_ctl.sv: {file_type: systemVerilogSource}
+      - src/pipeline.sv: {file_type: systemVerilogSource}
       - src/cpu_top.sv: {file_type: systemVerilogSource}
       - src/peri/uart_rx.sv: {file_type: systemVerilogSource}
       - src/peri/bootloader.sv: {file_type: systemVerilogSource}
@@ -28,11 +34,11 @@ filesets:
     files:
       - tests/stage02_if_tb.sv: {file_type: systemVerilogSource}
 
-  tb_cpu_top:
+  tb_cpu_boot_decode:
     files:
-      - tests/cpu_top_tb.sv: {file_type: systemVerilogSource}
+      - tests/cpu_boot_decode_tb.sv: {file_type: systemVerilogSource}
 
-  tb_cpu_top_data:
+  tb_cpu_boot_decode_data:
     files:
       - tests/sample1.bin: {file_type: user, copyto: sample1.bin}
 
@@ -53,7 +59,7 @@ targets:
   sim_pc:
     description: Run PC stage testbench
     default_tool: modelsim
-    toplevel: pc_stage_tb
+    toplevel: stagePC_tb
     filesets:
       - rtl
       - tb_pc
@@ -67,7 +73,7 @@ targets:
   sim_if:
     description: Run IF stage testbench
     default_tool: modelsim
-    toplevel: if_stage_tb
+    toplevel: stageIF_tb
     filesets:
       - rtl
       - tb_if
@@ -94,21 +100,21 @@ targets:
     hooks:
       post_run: [move_waves]
 
-  sim_cpu_top:
-    description: Run CPU top integration testbench
+  sim_cpu_boot_decode:
+    description: Run CPU boot & decode testbench
     default_tool: modelsim
-    toplevel: cpu_top_tb
+    toplevel: cpu_boot_decode_tb
     filesets:
       - rtl
-      - tb_cpu_top
-      - tb_cpu_top_data
+      - tb_cpu_boot_decode
+      - tb_cpu_boot_decode_data
     tools:
       modelsim:
         vlog_options:
           - -sv
         vsim_options:
           - "-c"
-          - "-wlf cpu_top_tb.wlf"
+          - "-wlf cpu_boot_decode_tb.wlf"
           - "-do 'log -r /*; run -all; quit'"
     hooks:
       post_run: [move_waves]
