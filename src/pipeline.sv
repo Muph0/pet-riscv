@@ -40,6 +40,10 @@ module pipeline (
     );
 
     // --- ID stage ---
+    assign id_io.fw_data_ex  = ex_io.alu_result_comb;  // combinational ALU (in EX now)
+    assign id_io.fw_data_mem = ex_io.alu_result;  // registered EX (in MEM now)
+    assign id_io.fw_data_wb  = wb_io.rd_data;  // WB output (handles loads too)
+
     stageID sID (
         .clk,
         .io  (id_io.in),

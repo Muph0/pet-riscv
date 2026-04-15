@@ -5,11 +5,11 @@
   "altMarkerTime": null,
   "displayTimeUnit": "µs",
   "selectedSignal": {
-    "name": "cpu_top_fwd_tb.dut.pipe.ex_io.wb_en",
+    "name": "cpu_top_fwd_tb.dut.pipe.id_io.fw_wb",
     "msb": -1,
     "lsb": -1
   },
-  "zoomRatio": 0.002318240183029099,
+  "zoomRatio": 0.0023182401830297303,
   "scrollLeft": 2076967570,
   "displayedSignals": [
     {
@@ -267,7 +267,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 266,
+          "netlistId": 268,
           "name": "cpu_top_fwd_tb.dut.pipe.sID.instr",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -280,7 +280,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 272,
+          "netlistId": 274,
           "name": "cpu_top_fwd_tb.dut.pipe.sID.funct7",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -293,7 +293,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 269,
+          "netlistId": 271,
           "name": "cpu_top_fwd_tb.dut.pipe.sID.funct3",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -306,7 +306,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 273,
+          "netlistId": 275,
           "name": "cpu_top_fwd_tb.dut.pipe.sID.imm",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -319,7 +319,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 268,
+          "netlistId": 270,
           "name": "cpu_top_fwd_tb.dut.pipe.sID.rd",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -332,7 +332,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 270,
+          "netlistId": 272,
           "name": "cpu_top_fwd_tb.dut.pipe.sID.rs1",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -345,7 +345,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 271,
+          "netlistId": 273,
           "name": "cpu_top_fwd_tb.dut.pipe.sID.rs2",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -501,7 +501,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 138,
+          "netlistId": 140,
           "name": "cpu_top_fwd_tb.dut.pipe.id_io.pc",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -514,7 +514,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 137,
+          "netlistId": 139,
           "name": "cpu_top_fwd_tb.dut.pipe.id_io.rd",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -553,7 +553,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 139,
+          "netlistId": 141,
           "name": "cpu_top_fwd_tb.dut.pipe.id_io.wb_en",
           "numberFormat": "binary",
           "colorIndex": 0,
@@ -573,7 +573,7 @@
       "children": [
         {
           "dataType": "netlist-variable",
-          "netlistId": 144,
+          "netlistId": 146,
           "name": "cpu_top_fwd_tb.dut.pipe.ex_io.alu_result",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -586,7 +586,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 141,
+          "netlistId": 143,
           "name": "cpu_top_fwd_tb.dut.pipe.ex_io.enable",
           "numberFormat": "binary",
           "colorIndex": 0,
@@ -599,7 +599,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 142,
+          "netlistId": 144,
           "name": "cpu_top_fwd_tb.dut.pipe.ex_io.fw_mem",
           "numberFormat": "binary",
           "colorIndex": 0,
@@ -612,7 +612,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 143,
+          "netlistId": 145,
           "name": "cpu_top_fwd_tb.dut.pipe.ex_io.fw_wb",
           "numberFormat": "binary",
           "colorIndex": 0,
@@ -625,7 +625,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 146,
+          "netlistId": 148,
           "name": "cpu_top_fwd_tb.dut.pipe.ex_io.mem_mode",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -638,7 +638,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 147,
+          "netlistId": 149,
           "name": "cpu_top_fwd_tb.dut.pipe.ex_io.mem_width",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -651,7 +651,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 145,
+          "netlistId": 147,
           "name": "cpu_top_fwd_tb.dut.pipe.ex_io.op_mem",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -664,7 +664,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 152,
+          "netlistId": 154,
           "name": "cpu_top_fwd_tb.dut.pipe.ex_io.pc",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -677,7 +677,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 151,
+          "netlistId": 153,
           "name": "cpu_top_fwd_tb.dut.pipe.ex_io.rd",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -690,7 +690,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 140,
+          "netlistId": 142,
           "name": "cpu_top_fwd_tb.dut.pipe.ex_io.reset",
           "numberFormat": "binary",
           "colorIndex": 0,
@@ -703,7 +703,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 148,
+          "netlistId": 150,
           "name": "cpu_top_fwd_tb.dut.pipe.ex_io.rs1",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -716,7 +716,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 149,
+          "netlistId": 151,
           "name": "cpu_top_fwd_tb.dut.pipe.ex_io.rs2",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -729,7 +729,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 150,
+          "netlistId": 152,
           "name": "cpu_top_fwd_tb.dut.pipe.ex_io.wb_en",
           "numberFormat": "binary",
           "colorIndex": 0,

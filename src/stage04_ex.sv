@@ -10,6 +10,7 @@ interface stageEX_face;
 
     // ALU result
     logic      [31:0] alu_result;
+    logic      [31:0] alu_result_comb;  // combinational (before pipeline reg)
 
     // Memory (passed through)
     logic      [31:0] op_mem;
@@ -27,10 +28,10 @@ interface stageEX_face;
 
     modport in(
         input reset, enable,
-        output alu_result, op_mem, mem_mode, mem_width, rs1, rs2, wb_en, rd, pc
+        output alu_result, alu_result_comb, op_mem, mem_mode, mem_width, rs1, rs2, wb_en, rd, pc
     );
     modport prev(input alu_result, op_mem, mem_mode, mem_width, rs1, rs2, wb_en, rd, pc);
-    modport hazard(input rs1, rs2, rd, wb_en, output reset, enable);
+    modport hazard(input rs1, rs2, rd, wb_en, mem_mode, output reset, enable);
 
 endinterface
 
@@ -52,6 +53,8 @@ module stageEX
         .m_ext   (sID.alu_mul),
         .result
     );
+
+    assign io.alu_result_comb = result;
 
     // --- Pipeline register ---
     always_ff @(posedge clk) begin

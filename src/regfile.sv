@@ -26,7 +26,7 @@ module regfile (
     end
 
     // Sync write
-    always_ff @(posedge clk) begin
+    always @(posedge clk) begin
         if (write && dest != 5'd0) data[dest] <= dest_data;
     end
 

@@ -6,10 +6,14 @@ interface stageID_face;
     logic             reset;
     logic             enable;
 
-    // Forwarding
-    logic             fw_ex;
-    logic             fw_mem;
-    logic             fw_wb;
+    // Forwarding select (per source): 00=regfile, 01=EX, 10=MEM, 11=WB
+    logic      [ 1:0] fw_sel1;
+    logic      [ 1:0] fw_sel2;
+
+    // Forwarding data buses (directly from later pipeline stages)
+    logic      [31:0] fw_data_ex;
+    logic      [31:0] fw_data_mem;
+    logic      [31:0] fw_data_wb;
 
     // ALU operands
     logic      [31:0] opA;
@@ -28,6 +32,8 @@ interface stageID_face;
     // Register tracking
     logic      [ 4:0] rs1;
     logic      [ 4:0] rs2;
+    logic      [ 4:0] rs1_next;
+    logic      [ 4:0] rs2_next;
 
     // Writeback
     logic      [ 4:0] rd;
@@ -35,15 +41,19 @@ interface stageID_face;
     logic             wb_en;
 
     modport in(
-        input reset, enable,
+        input reset, enable, fw_sel1, fw_sel2, fw_data_ex, fw_data_mem, fw_data_wb,
         output opA, opB, op_mem, alu_op, alu_negb_shar, alu_mul,
-               mem_mode, mem_width, rs1, rs2, wb_en, rd, pc
+               mem_mode, mem_width, rs1, rs2, rs1_next, rs2_next,
+               wb_en, rd, pc
     );
     modport prev(
         input opA, opB, op_mem, alu_op, alu_negb_shar, alu_mul,
               mem_mode, mem_width, rs1, rs2, wb_en, rd, pc
     );
-    modport hazard(input rs1, rs2, rd, wb_en, output reset, enable);
+    modport hazard(
+        input rs1_next, rs2_next, rd, mem_mode, wb_en,
+        output reset, enable, fw_sel1, fw_sel2
+    );
 
 endinterface
 
@@ -84,12 +94,15 @@ module stageID
     logic [4:0] rs2;
     logic [6:0] funct7;
 
-    assign opcode = instr[6:0];
-    assign rd     = instr[11:7];
-    assign funct3 = instr[14:12];
-    assign rs1    = instr[19:15];
-    assign rs2    = instr[24:20];
-    assign funct7 = instr[31:25];
+    assign opcode      = instr[6:0];
+    assign rd          = instr[11:7];
+    assign funct3      = instr[14:12];
+    assign rs1         = instr[19:15];
+    assign rs2         = instr[24:20];
+    assign funct7      = instr[31:25];
+
+    assign io.rs1_next = rs1;
+    assign io.rs2_next = rs2;
 
     // --- Immediate generation (combinational) ---
     logic [31:0] imm;
@@ -124,6 +137,24 @@ module stageID
         .src2_data(rs2_data)
     );
 
+    // --- Forwarding mux ---
+    logic [31:0] fwd1, fwd2;
+
+    always_comb begin
+        case (io.fw_sel1)
+            2'b01:   fwd1 = io.fw_data_ex;
+            2'b10:   fwd1 = io.fw_data_mem;
+            2'b11:   fwd1 = io.fw_data_wb;
+            default: fwd1 = rs1_data;
+        endcase
+        case (io.fw_sel2)
+            2'b01:   fwd2 = io.fw_data_ex;
+            2'b10:   fwd2 = io.fw_data_mem;
+            2'b11:   fwd2 = io.fw_data_wb;
+            default: fwd2 = rs2_data;
+        endcase
+    end
+
     // --- Control signal generation (combinational) ---
     logic [31:0] opA, opB, op_mem;
     logic      [2:0] alu_op;
@@ -135,9 +166,9 @@ module stageID
 
     always_comb begin
         // Defaults
-        opA           = rs1_data;
+        opA           = fwd1;
         opB           = imm;
-        op_mem        = rs2_data;
+        op_mem        = fwd2;
         alu_op        = funct3;
         alu_negb_shar = '0;
         alu_mul       = '0;
@@ -147,7 +178,7 @@ module stageID
 
         case (opcode_t'(opcode))
             OP_REG: begin
-                opB           = rs2_data;
+                opB           = fwd2;
                 alu_negb_shar = funct7[5];  // SUB / SRA
                 alu_mul       = funct7[0];  // M-extension
             end
@@ -180,7 +211,7 @@ module stageID
                 wb_en     = '0;
             end
             OP_BRANCH: begin
-                opB   = rs2_data;
+                opB   = fwd2;
                 wb_en = '0;
             end
             OP_FENCE: begin
