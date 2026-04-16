@@ -4,8 +4,6 @@ module cpu_top (
     input  pin_rx,
     output pin_tx,
 
-    input btn_step,  // step button (active low)
-
     output led4,
     output led5
 );
@@ -30,7 +28,6 @@ module cpu_top (
     logic [31:0] bl_mem_addr;
     logic [ 7:0] bl_mem_data;
     logic        bl_mem_write;
-    logic        bl_step;
     logic        bl_run;
     logic        bl_loading;
 
@@ -42,7 +39,6 @@ module cpu_top (
         .mem_addr (bl_mem_addr),
         .mem_data (bl_mem_data),
         .mem_write(bl_mem_write),
-        .step     (bl_step),
         .run      (bl_run),
         .loading  (bl_loading)
     );
@@ -51,7 +47,7 @@ module cpu_top (
     pipeline pipe (
         .clk     (clk27),
         .reset,
-        .halt    (!bl_step && !bl_run),
+        .halt    (!bl_run),
         .loading (bl_loading),
         .bl_addr (bl_mem_addr),
         .bl_data (bl_mem_data),
@@ -60,7 +56,7 @@ module cpu_top (
 
     // --- Status LEDs ---
     assign led5 = !bl_loading;  // lit when done loading
-    assign led4 = bl_step;  // blinks when stepping
+    assign led4 = bl_run;  // lit when CPU is running
 
     // --- Reset ---
     always_ff @(posedge clk27) begin

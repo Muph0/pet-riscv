@@ -12,7 +12,6 @@ module bootloader (
     output logic        mem_write,
 
     // Pipeline control
-    output logic step,
     output logic run,
     output logic loading
 );
@@ -33,8 +32,6 @@ module bootloader (
     assign mem_data  = uart_data;
 
     always_ff @(posedge clk) begin
-        step <= '0;
-
         if (reset) begin
             state           <= S_IDLE;
             mem_addr        <= '0;
@@ -47,8 +44,6 @@ module bootloader (
                     case (uart_data)
                         8'h57:  // 'W'
                         state <= S_WRITE_A1;
-                        8'h53:  // 'S'
-                        step <= '1;
                         8'h52:  // 'R'
                         run <= '1;
                         default: ;

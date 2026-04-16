@@ -21,12 +21,11 @@ module cpu_lw_tb;
     // Instantiate DUT
     // ------------------------------------------------------------
     cpu_top dut (
-        .clk27   (clk),
-        .pin_rx  (pin_rx),
-        .pin_tx  (pin_tx),
-        .btn_step(1'b1),
-        .led4    (led4),
-        .led5    (led5)
+        .clk27 (clk),
+        .pin_rx(pin_rx),
+        .pin_tx(pin_tx),
+        .led4  (led4),
+        .led5  (led5)
     );
 
     wire loading = dut.bl.loading;

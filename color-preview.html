@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>FPGA Color Space Simulator</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background: #1a1a1a;
+            color: #eee;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .controls {
+            margin-bottom: 20px;
+            background: #333;
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .container {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            width: 100%;
+            max-width: 1620px;
+        }
+
+        .panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        canvas,
+        .drop-zone {
+            width: 800px;
+            height: 600px;
+            background: #000;
+            border: 2px dashed #555;
+            object-fit: contain;
+        }
+
+        h2 {
+            margin: 10px 0;
+            font-weight: 300;
+        }
+
+        select {
+            padding: 8px;
+            border-radius: 4px;
+            background: #444;
+            color: white;
+            border: 1px solid #666;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="controls">
+        <strong>Color Encoding Simulator</strong>
+        <select id="modeSelect">
+            <option value="yuv844">YUV 8-4-4 (Custom FPGA)</option>
+            <option value="yuv888">YUV 8-8-8</option>
+            <option value="yuv655">YUV 6-5-5</option>
+            <option value="yuv745">YUV 7-4-5</option>
+            <option value="yuv754">YUV 7-5-4</option>
+            <option value="rgb565">RGB 5-6-5 (Standard High Color)</option>
+            <option value="rgb454">RGB 4-5-4</option>
+            <option value="rgb343">RGB 3-4-3</option>
+            <option value="rgb332">RGB 3-3-2</option>
+        </select>
+        <select id="ditherSelect">
+            <option value="0">No Dithering</option>
+            <option value="1">Ordered 4x4</option>
+            <option value="2">Ordered 8x8</option>
+            <option value="3">Random</option>
+        </select>
+        <span>Paste (Ctrl+V) or Drag/Drop an image</span>
+    </div>
+
+    <div class="container">
+        <div class="panel">
+            <h2>Original (Input)</h2>
+            <div id="dropZone" class="drop-zone"
+                style="display:flex; align-items:center; justify-content:center; text-align:center;">
+                Drop or Paste Image Here
+            </div>
+            <canvas id="sourceCanvas" width="800" height="600" style="display:none"></canvas>
+        </div>
+        <div class="panel">
+            <h2 id="resultTitle">YUV 8-4-4 Preview</h2>
+            <canvas id="glCanvas" width="800" height="600"></canvas>
+        </div>
+    </div>
+
+    <script id="vs" type="x-shader/x-vertex">
+    #version 300 es
+    in vec2 pos;
+    out vec2 uv;
+    void main() {
+        uv = pos * 0.5 + 0.5;
+        uv.y = 1.0 - uv.y;
+        gl_Position = vec4(pos, 0.0, 1.0);
+    }
+</script>
+
+    <script id="fs" type="x-shader/x-fragment">
+    #version 300 es
+    precision highp float;
+    in vec2 uv;
+    out vec4 fragColor;
+    uniform sampler2D tex;
+    uniform int mode;
+    uniform int dither;
+    uniform vec2 resolution;
+
+    // Bayer 4x4 threshold matrix, row-major, values in [0,15]
+    const float BAYER4[16] = float[16](
+         0.0,  8.0,  2.0, 10.0,
+        12.0,  4.0, 14.0,  6.0,
+         3.0, 11.0,  1.0,  9.0,
+        15.0,  7.0, 13.0,  5.0
+    );
+
+    // Bayer 8x8 threshold matrix, row-major, values in [0,63]
+    const float BAYER8[64] = float[64](
+         0.0, 32.0,  8.0, 40.0,  2.0, 34.0, 10.0, 42.0,
+        48.0, 16.0, 56.0, 24.0, 50.0, 18.0, 58.0, 26.0,
+        12.0, 44.0,  4.0, 36.0, 14.0, 46.0,  6.0, 38.0,
+        60.0, 28.0, 52.0, 20.0, 62.0, 30.0, 54.0, 22.0,
+         3.0, 35.0, 11.0, 43.0,  1.0, 33.0,  9.0, 41.0,
+        51.0, 19.0, 59.0, 27.0, 49.0, 17.0, 57.0, 25.0,
+        15.0, 47.0,  7.0, 39.0, 13.0, 45.0,  5.0, 37.0,
+        63.0, 31.0, 55.0, 23.0, 61.0, 29.0, 53.0, 21.0
+    );
+
+    float hash12(vec2 p) {
+        vec3 p3 = fract(vec3(p.xyx) * 0.1031);
+        p3 += dot(p3, p3.yzx + 33.33);
+        return fract((p3.x + p3.y) * p3.z);
+    }
+
+    // Returns dither noise in [-0.5, 0.5]
+    float bayerNoise(vec2 pixelPos) {
+        if (dither == 1) {
+            ivec2 p = ivec2(pixelPos) % ivec2(4);
+            return BAYER4[p.x + p.y * 4] / 16.0 - 0.5;
+        } else if (dither == 2) {
+            ivec2 p = ivec2(pixelPos) % ivec2(8);
+            return BAYER8[p.x + p.y * 8] / 64.0 - 0.5;
+        } else if (dither == 3) {
+            return hash12(pixelPos) - 0.5;
+        }
+        return 0.0;
+    }
+
+    float quantize(float v, float levels, vec2 pixelPos) {
+        return floor(v * levels + 0.5 + bayerNoise(pixelPos)) / levels;
+    }
+
+    vec4 yuvRoundTrip(vec4 col, float yMax, float uMax, float vMax, vec2 pixelPos) {
+        float y = 0.299 * col.r + 0.587 * col.g + 0.114 * col.b;
+        float u = -0.14713 * col.r - 0.28886 * col.g + 0.436 * col.b + 0.5;
+        float v = 0.615 * col.r - 0.51499 * col.g - 0.10001 * col.b + 0.5;
+        y = quantize(y, yMax, pixelPos);
+        u = quantize(u, uMax, pixelPos + vec2(1.0, 0.0));
+        v = quantize(v, vMax, pixelPos + vec2(0.0, 1.0));
+        float r = y + 1.13983 * (v - 0.5);
+        float g = y - 0.39465 * (u - 0.5) - 0.58060 * (v - 0.5);
+        float b = y + 2.03211 * (u - 0.5);
+        return vec4(r, g, b, 1.0);
+    }
+
+    // YUV params: [yMax, uMax, vMax] per mode index (0-3 = YUV modes, 4 = RGB565 sentinel)
+    const float YUV_PARAMS[15] = float[15](
+        255.0, 15.0, 15.0,  // 0: YUV 8-4-4
+        255.0, 255.0, 255.0, // 1: YUV 8-8-8
+         63.0, 31.0, 31.0,  // 2: YUV 6-5-5
+        127.0, 15.0, 31.0,  // 3: YUV 7-4-5
+        127.0, 31.0, 15.0   // 4: YUV 7-5-4
+    );
+
+    // RGB params: [rMax, gMax, bMax] per RGB mode index
+    const float RGB_PARAMS[12] = float[12](
+        31.0, 63.0, 31.0,  // 0: RGB 5-6-5
+        15.0, 31.0, 15.0,  // 1: RGB 4-5-4
+         7.0, 15.0,  7.0,  // 2: RGB 3-4-3
+         7.0,  7.0,  3.0   // 3: RGB 3-3-2
+    );
+
+    void main() {
+        vec4 col = texture(tex, uv);
+        vec2 pixelPos = floor(uv * resolution);
+
+        if (mode < 5) {
+            fragColor = yuvRoundTrip(col,
+                YUV_PARAMS[mode * 3 + 0],
+                YUV_PARAMS[mode * 3 + 1],
+                YUV_PARAMS[mode * 3 + 2],
+                pixelPos);
+        } else {
+            int rm = mode - 5;
+            float r = quantize(col.r, RGB_PARAMS[rm * 3 + 0], pixelPos);
+            float g = quantize(col.g, RGB_PARAMS[rm * 3 + 1], pixelPos + vec2(1.0, 0.0));
+            float b = quantize(col.b, RGB_PARAMS[rm * 3 + 2], pixelPos + vec2(0.0, 1.0));
+            fragColor = vec4(r, g, b, 1.0);
+        }
+    }
+</script>
+
+    <script>
+        const glCanvas = document.getElementById('glCanvas');
+        const gl = glCanvas.getContext('webgl2');
+        const srcCanvas = document.getElementById('sourceCanvas');
+        const srcCtx = srcCanvas.getContext('2d');
+        const dropZone = document.getElementById('dropZone');
+        const modeSelect = document.getElementById('modeSelect');
+        const ditherSelect = document.getElementById('ditherSelect');
+
+        // Shader Setup
+        function createShader(gl, type, source) {
+            const s = gl.createShader(type);
+            gl.shaderSource(s, source.trim());
+            gl.compileShader(s);
+            if (!gl.getShaderParameter(s, gl.COMPILE_STATUS))
+                console.error('Shader compile error:', gl.getShaderInfoLog(s));
+            return s;
+        }
+
+        const prog = gl.createProgram();
+        gl.attachShader(prog, createShader(gl, gl.VERTEX_SHADER, document.getElementById('vs').text));
+        gl.attachShader(prog, createShader(gl, gl.FRAGMENT_SHADER, document.getElementById('fs').text));
+        gl.linkProgram(prog);
+        if (!gl.getProgramParameter(prog, gl.LINK_STATUS))
+            console.error('Program link error:', gl.getProgramInfoLog(prog));
+        gl.useProgram(prog);
+
+        const posLoc = gl.getAttribLocation(prog, 'pos');
+        const buf = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+        gl.enableVertexAttribArray(posLoc);
+        gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+
+        const tex = gl.createTexture();
+        gl.bindTexture(gl.TEXTURE_2D, tex);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+        function updateDisplay() {
+            const modeMap = { yuv844: 0, yuv888: 1, yuv655: 2, yuv745: 3, yuv754: 4, rgb565: 5, rgb454: 6, rgb343: 7, rgb332: 8 };
+            const mode = modeMap[modeSelect.value] || 0;
+            document.getElementById('resultTitle').innerText = modeSelect.options[modeSelect.selectedIndex].text + " Preview";
+            gl.uniform1i(gl.getUniformLocation(prog, 'mode'), mode);
+            gl.uniform1i(gl.getUniformLocation(prog, 'dither'), parseInt(ditherSelect.value));
+            gl.uniform2f(gl.getUniformLocation(prog, 'resolution'), glCanvas.width, glCanvas.height);
+            gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, srcCanvas);
+            gl.drawArrays(gl.TRIANGLES, 0, 3);
+        }
+
+        function handleImg(file) {
+            if (!file || !file.type.startsWith('image/')) return;
+            const img = new Image();
+            img.onload = () => {
+                dropZone.style.display = 'none';
+                srcCanvas.style.display = 'block';
+                srcCtx.fillStyle = "black";
+                srcCtx.fillRect(0, 0, 800, 600);
+                const ratio = Math.min(800 / img.width, 600 / img.height);
+                const w = img.width * ratio;
+                const h = img.height * ratio;
+                srcCtx.drawImage(img, (800 - w) / 2, (600 - h) / 2, w, h);
+                updateDisplay();
+            };
+            img.src = URL.createObjectURL(file);
+        }
+
+        // Improved Paste Listener
+        window.addEventListener('paste', e => {
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf('image') !== -1) {
+                    const blob = items[i].getAsFile();
+                    handleImg(blob);
+                    break;
+                }
+            }
+        });
+
+        // Ensure focus when clicking the drop zone
+        dropZone.onclick = () => document.body.focus();
+
+        dropZone.ondragover = e => { e.preventDefault(); dropZone.style.borderColor = "#00ff00"; };
+        dropZone.ondragleave = () => { dropZone.style.borderColor = "#555"; };
+        dropZone.ondrop = e => {
+            e.preventDefault();
+            dropZone.style.borderColor = "#555";
+            if (e.dataTransfer.files.length) handleImg(e.dataTransfer.files[0]);
+        };
+
+        modeSelect.onchange = updateDisplay;
+        ditherSelect.onchange = updateDisplay;
+        // Auto-focus on load
+        window.onload = () => document.body.focus();
+    </script>
+</body>
+
+</html>

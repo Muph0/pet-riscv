@@ -21,12 +21,11 @@ module cpu_fwd_tb;
     // Instantiate DUT
     // ------------------------------------------------------------
     cpu_top dut (
-        .clk27   (clk),
-        .pin_rx  (pin_rx),
-        .pin_tx  (pin_tx),
-        .btn_step(1'b1),    // not used in simulation
-        .led4    (led4),
-        .led5    (led5)
+        .clk27 (clk),
+        .pin_rx(pin_rx),
+        .pin_tx(pin_tx),
+        .led4  (led4),
+        .led5  (led5)
     );
 
     wire loading = dut.bl.loading;
@@ -89,14 +88,6 @@ module cpu_fwd_tb;
             end
             $fclose(fd);
             $display("[TB] Loaded %0d bytes from %s", fsize, filename);
-        end
-    endtask
-
-    // Advance pipeline one clock via bootloader 'S' command
-    task step_one;
-        begin
-            send_uart_byte(8'h53);  // 'S'
-            repeat (4) @(posedge clk);
         end
     endtask
 

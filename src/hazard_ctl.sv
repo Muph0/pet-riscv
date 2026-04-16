@@ -2,6 +2,7 @@ module hazard_ctl (
     input clk,
     input reset,
     input halt,
+    input loading,
 
     stagePC_face.hazard  sPC,
     stageIF_face.hazard  sIF,
@@ -55,18 +56,20 @@ module hazard_ctl (
     // that entered IF and ID after the branch.
     wire flush = sEX.branch_taken;
 
+    wire stall = halt || loading;
+
     // Default: pass through reset and advance to all stages
     always_comb begin
         sPC.reset   = reset;
-        sPC.advance = !halt && !load_stall;
+        sPC.advance = !stall && !load_stall;
         sIF.reset   = reset || flush;
-        sIF.enable  = !halt && !load_stall;
-        sID.reset   = reset || flush || (!halt && load_stall);  // bubble on stall or flush
-        sID.enable  = !halt && !load_stall;
+        sIF.enable  = !stall && !load_stall;
+        sID.reset   = reset || flush || (!stall && load_stall);  // bubble on stall or flush
+        sID.enable  = !stall && !load_stall;
         sEX.reset   = reset;
-        sEX.enable  = !halt;
+        sEX.enable  = !stall;
         sMEM.reset  = reset;
-        sMEM.enable = !halt;
+        sMEM.enable = !stall;
     end
 
 endmodule

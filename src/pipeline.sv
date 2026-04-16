@@ -77,6 +77,7 @@ module pipeline (
         .clk,
         .reset,
         .halt,
+        .loading,
         .sPC (pc_io.hazard),
         .sIF (if_io.hazard),
         .sID (id_io.hazard),

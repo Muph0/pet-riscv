@@ -42,7 +42,7 @@ module stageIF
     logic   [31:0] held_addr;
     always_ff @(posedge clk) begin
         if (io.reset) held_addr <= '0;
-        else if (io.enable && !io.loading) held_addr <= prev.pc;
+        else if (io.enable) held_addr <= prev.pc;
     end
 
     always_comb begin
@@ -62,7 +62,7 @@ module stageIF
     // --- Pipeline register: delay PC to match BSRAM latency ---
     always_ff @(posedge clk) begin
         if (io.reset) io.pc <= '0;
-        else if (io.enable && !io.loading) io.pc <= prev.pc;
+        else if (io.enable) io.pc <= prev.pc;
     end
 
     // --- Instruction memory ---
