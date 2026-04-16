@@ -21,6 +21,17 @@ filesets:
       - src/cpu_top.sv: {file_type: systemVerilogSource}
       - src/peri/uart_rx.sv: {file_type: systemVerilogSource}
       - src/peri/bootloader.sv: {file_type: systemVerilogSource}
+      - src/peri/bus.sv: {file_type: systemVerilogSource}
+
+  tb_bus_xbar:
+    files:
+      - src/peri/bus.sv: {file_type: systemVerilogSource}
+      - tests/bus_xbar_tb.sv: {file_type: systemVerilogSource}
+
+  tb_bus_xbar_atomic:
+    files:
+      - src/peri/bus.sv: {file_type: systemVerilogSource}
+      - tests/bus_xbar_atomic_tb.sv: {file_type: systemVerilogSource}
 
   tb_uart_rx:
     files:
@@ -196,6 +207,40 @@ targets:
         vsim_options:
           - "-c"
           - "-wlf cpu_fib_tb.wlf"
+          - "-do 'log -r /*; run -all; quit'"
+    hooks:
+      post_run: [move_waves]
+
+  sim_bus_xbar:
+    description: Run crossbar controller testbench
+    default_tool: modelsim
+    toplevel: bus_xbar_tb
+    filesets:
+      - tb_bus_xbar
+    tools:
+      modelsim:
+        vlog_options:
+          - -sv
+        vsim_options:
+          - "-c"
+          - "-wlf bus_xbar_tb.wlf"
+          - "-do 'log -r /*; run -all; quit'"
+    hooks:
+      post_run: [move_waves]
+
+  sim_bus_xbar_atomic:
+    description: Run 5-master atomic RMW crossbar testbench
+    default_tool: modelsim
+    toplevel: bus_xbar_atomic_tb
+    filesets:
+      - tb_bus_xbar_atomic
+    tools:
+      modelsim:
+        vlog_options:
+          - -sv
+        vsim_options:
+          - "-c"
+          - "-wlf bus_xbar_atomic_tb.wlf"
           - "-do 'log -r /*; run -all; quit'"
     hooks:
       post_run: [move_waves]

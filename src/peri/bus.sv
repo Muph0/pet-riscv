@@ -18,13 +18,13 @@ interface wishbone #(
     logic [DATA_WIDTH-1:0] stom;  // Data sent from Slave to Master
     logic                  ack;  // Acknowledge: 1 = tell master stom is valid
     logic                  err;  // Error: Indicates invalid address (no slave on that address)
-    logic                  busy;  // Indicates Slave is busy (in use by other master now)
+    logic                  rty;  // Retry: Indicates Slave is busy (in use by another master)
 
     // Port for the Master (CPU, DMA, etc.)
-    modport master(output adr, mtos, sel, we, cyc, stb, input stom, ack, err, busy, clk, rst);
+    modport master(output adr, mtos, sel, we, cyc, stb, input stom, ack, err, rty, clk, rst);
 
     // Port for the Slave (Memory, UART, etc.)
-    modport slave(input adr, mtos, sel, we, cyc, stb, clk, rst, output stom, ack, err, busy);
+    modport slave(input adr, mtos, sel, we, cyc, stb, clk, rst, output stom, ack, err, rty);
 
 endinterface
 
@@ -61,101 +61,185 @@ module bus_xbar_ctrl #(
     end
     // synthesis translate_on
 
+    // Using clock and reset from the first master interface
+    // (Assuming synchronous bus where all interfaces share clk/rst)
+    logic clk, rst;
+    assign clk = m_bus[0].clk;
+    assign rst = m_bus[0].rst;
+
     // ==============================================================================
-    // CROSSBAR ROUTING & ARBITRATION LOGIC
+    // FLAT SIGNAL ARRAYS
+    // ModelSim (2020) does not support non-constant indices into interface arrays.
+    // All interface members are mirrored into plain logic arrays so the routing
+    // logic can freely use variable indices. A generate block with a constant
+    // genvar connects the two sides at the port boundaries.
     // ==============================================================================
 
-    logic [NS-1:0] m_req  [NM];  // m_req[m][s]: Master 'm' is requesting Slave 's'
-    int            grant  [NS];  // grant[s]: Which Master won access to Slave 's'
-    logic          active [NS];  // active[s]: Is Slave 's' currently targeted?
-    logic          matched[NM];  // matched[m]: Did Master 'm' address a valid Slave?
-    int            target [NM];  // target[m]: The valid Slave index targeted by Master 'm'
+    // Master inputs (driven by the master side / testbench)
+    logic [31:0] m_adr_f [NM];
+    logic [31:0] m_mtos_f[NM];
+    logic [ 3:0] m_sel_f [NM];
+    logic        m_we_f  [NM];
+    logic        m_cyc_f [NM];
+    logic        m_stb_f [NM];
 
+    // Master outputs (driven by this module, returned to master)
+    logic [31:0] m_stom_d[NM];
+    logic        m_ack_d [NM];
+    logic        m_err_d [NM];
+    logic        m_rty_d [NM];
+
+    // Slave outputs (driven by this module, forwarded to slave)
+    logic [31:0] s_adr_d [NS];
+    logic [31:0] s_mtos_d[NS];
+    logic [ 3:0] s_sel_d [NS];
+    logic        s_we_d  [NS];
+    logic        s_cyc_d [NS];
+    logic        s_stb_d [NS];
+
+    // Slave inputs (driven by the slave side)
+    logic [31:0] s_stom_f[NS];
+    logic        s_ack_f [NS];
+    logic        s_err_f [NS];
+    logic        s_rty_f [NS];
+
+    genvar gi;
+    generate
+        for (gi = 0; gi < NM; gi++) begin : gen_m_flat
+            // Master → flat
+            assign m_adr_f[gi] = m_bus[gi].adr;
+            assign m_mtos_f[gi] = m_bus[gi].mtos;
+            assign m_sel_f[gi] = m_bus[gi].sel;
+            assign m_we_f[gi] = m_bus[gi].we;
+            assign m_cyc_f[gi] = m_bus[gi].cyc;
+            assign m_stb_f[gi] = m_bus[gi].stb;
+            // Flat → master interface outputs
+            assign m_bus[gi].stom = m_stom_d[gi];
+            assign m_bus[gi].ack = m_ack_d[gi];
+            assign m_bus[gi].err = m_err_d[gi];
+            assign m_bus[gi].rty = m_rty_d[gi];
+        end
+
+        for (gi = 0; gi < NS; gi++) begin : gen_s_flat
+            // Slave → flat
+            assign s_stom_f[gi] = s_bus[gi].stom;
+            assign s_ack_f[gi] = s_bus[gi].ack;
+            assign s_err_f[gi] = s_bus[gi].err;
+            assign s_rty_f[gi] = s_bus[gi].rty;
+            // Flat → slave interface outputs
+            assign s_bus[gi].adr = s_adr_d[gi];
+            assign s_bus[gi].mtos = s_mtos_d[gi];
+            assign s_bus[gi].sel = s_sel_d[gi];
+            assign s_bus[gi].we = s_we_d[gi];
+            assign s_bus[gi].cyc = s_cyc_d[gi];
+            assign s_bus[gi].stb = s_stb_d[gi];
+        end
+    endgenerate
+
+    // ==============================================================================
+    // CROSSBAR ROUTING & ARBITRATION LOGIC  (all using flat arrays)
+    // ==============================================================================
+
+    logic [NS-1:0] m_req  [NM];
+    logic          matched[NM];
+    int            target [NM];
+
+    // Stateful Arbitration Registers
+    logic          s_busy [NS];  // Is the slave currently locked?
+    int            s_owner[NS];  // Which master currently owns the slave?
+
+    // 1. Address Decoding (Combinatorial)
     always_comb begin
-        // 1. Initialize variables to defaults to prevent inferred latches
         for (int m = 0; m < NM; m++) begin
             matched[m] = 1'b0;
             target[m]  = 0;
             for (int s = 0; s < NS; s++) begin
                 m_req[m][s] = 1'b0;
-            end
-        end
-
-        for (int s = 0; s < NS; s++) begin
-            grant[s]  = 0;
-            active[s] = 1'b0;
-        end
-
-        // 2. Address Decoding: Determine which master wants which slave
-        for (int m = 0; m < NM; m++) begin
-            if (m_bus[m].cyc) begin
-                for (int s = 0; s < NS; s++) begin
-                    if (m_bus[m].adr >= S_START[s] && m_bus[m].adr < S_END[s]) begin
-                        m_req[m][s] = 1'b1;
-                        matched[m]  = 1'b1;
-                        target[m]   = s;
-                    end
+                // Master requests slave if CYC is high and address matches
+                if (m_cyc_f[m] && (m_adr_f[m] >= S_START[s] && m_adr_f[m] < S_END[s])) begin
+                    m_req[m][s] = 1'b1;
+                    matched[m]  = 1'b1;
+                    target[m]   = s;
                 end
             end
         end
+    end
 
-        // 3. Arbitration: Decide which master gets access to a contested slave
-        // Fixed Priority scheme: Lower master index (m=0) has higher priority.
-        // Reversing the loop ensures the lower index overrides higher index assignments.
-        for (int s = 0; s < NS; s++) begin
-            for (int m = NM - 1; m >= 0; m--) begin
-                if (m_req[m][s]) begin
-                    active[s] = 1'b1;
-                    grant[s]  = m;
-                end
+    // 2. Stateful Arbitration (Sequential)
+    always_ff @(posedge clk) begin
+        if (rst) begin
+            for (int s = 0; s < NS; s++) begin
+                s_busy[s]  <= 1'b0;
+                s_owner[s] <= 0;
             end
-        end
-
-        // 4. MUX Master -> Slave (Forward Path)
-        for (int s = 0; s < NS; s++) begin
-            if (active[s]) begin
-                s_bus[s].adr  = m_bus[grant[s]].adr;
-                s_bus[s].mtos = m_bus[grant[s]].mtos;
-                s_bus[s].sel  = m_bus[grant[s]].sel;
-                s_bus[s].we   = m_bus[grant[s]].we;
-                s_bus[s].cyc  = m_bus[grant[s]].cyc;
-                s_bus[s].stb  = m_bus[grant[s]].stb;
-            end else begin
-                // Tie off unused slave ports cleanly
-                s_bus[s].adr  = '0;
-                s_bus[s].mtos = '0;
-                s_bus[s].sel  = '0;
-                s_bus[s].we   = 1'b0;
-                s_bus[s].cyc  = 1'b0;
-                s_bus[s].stb  = 1'b0;
-            end
-        end
-
-        // 5. MUX Slave -> Master (Return Path)
-        for (int m = 0; m < NM; m++) begin
-            // Default inactive state
-            m_bus[m].stom = '0;
-            m_bus[m].ack  = 1'b0;
-            m_bus[m].err  = 1'b0;
-            m_bus[m].busy = 1'b0;
-
-            if (m_bus[m].cyc) begin
-                if (matched[m]) begin
-                    if (active[target[m]] && (grant[target[m]] == m)) begin
-                        // Master successfully established connection
-                        m_bus[m].stom = s_bus[target[m]].stom;
-                        m_bus[m].ack  = s_bus[target[m]].ack;
-                        m_bus[m].err  = s_bus[target[m]].err;
-                        m_bus[m].busy = s_bus[target[m]].busy;
-                    end else begin
-                        // Target slave is busy with a higher priority master
-                        m_bus[m].busy = 1'b1;
+        end else begin
+            for (int s = 0; s < NS; s++) begin
+                if (s_busy[s]) begin
+                    // SLAVE IS LOCKED: Wait for the owning master to drop CYC
+                    if (!m_cyc_f[s_owner[s]]) begin
+                        s_busy[s] <= 1'b0;  // Release lock
                     end
                 end else begin
-                    // Address does not map to any known slave
-                    if (m_bus[m].stb) begin
-                        m_bus[m].err = 1'b1;
+                    // SLAVE IS IDLE: Arbitrate new requests
+                    // Loop starts from 0 to prioritize lower-indexed masters
+                    for (int m = 0; m < NM; m++) begin
+                        if (m_req[m][s]) begin
+                            s_busy[s]  <= 1'b1;
+                            s_owner[s] <= m;
+                            break;  // Highest priority master found, lock and stop looking
+                        end
                     end
+                end
+            end
+        end
+    end
+
+    // 3. MUX Master -> Slave (Forward Path)
+    always_comb begin
+        for (int s = 0; s < NS; s++) begin
+            if (s_busy[s]) begin
+                s_adr_d[s]  = m_adr_f[s_owner[s]];
+                s_mtos_d[s] = m_mtos_f[s_owner[s]];
+                s_sel_d[s]  = m_sel_f[s_owner[s]];
+                s_we_d[s]   = m_we_f[s_owner[s]];
+                s_cyc_d[s]  = m_cyc_f[s_owner[s]];
+                s_stb_d[s]  = m_stb_f[s_owner[s]];
+            end else begin
+                s_adr_d[s]  = '0;
+                s_mtos_d[s] = '0;
+                s_sel_d[s]  = '0;
+                s_we_d[s]   = 1'b0;
+                s_cyc_d[s]  = 1'b0;
+                s_stb_d[s]  = 1'b0;
+            end
+        end
+    end
+
+    // 4. MUX Slave -> Master (Return Path)
+    always_comb begin
+        for (int m = 0; m < NM; m++) begin
+            m_stom_d[m] = '0;
+            m_ack_d[m]  = 1'b0;
+            m_err_d[m]  = 1'b0;
+            m_rty_d[m]  = 1'b0;
+
+            if (m_cyc_f[m]) begin
+                if (matched[m]) begin
+                    // Check if this master currently owns the target slave
+                    if (s_busy[target[m]] && (s_owner[target[m]] == m)) begin
+                        // Connection is active and granted to this master
+                        m_stom_d[m] = s_stom_f[target[m]];
+                        m_ack_d[m]  = s_ack_f[target[m]];
+                        m_err_d[m]  = s_err_f[target[m]];
+                        m_rty_d[m]  = s_rty_f[target[m]];
+                    end else begin
+                        // Target slave is busy with a different master, or arbitration is pending
+                        // Issue a retry so the master backs off and tries again
+                        m_rty_d[m] = 1'b1;
+                    end
+                end else if (m_stb_f[m]) begin
+                    // Address does not map to any known slave
+                    m_err_d[m] = 1'b1;
                 end
             end
         end

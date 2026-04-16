@@ -1,4 +1,4 @@
-.PHONY: list sim_pc sim_if sim_uart_rx sim_cpu_boot_decode sim_cpu_fwd sim_cpu_lw sim_cpu_fib clean
+.PHONY: list sim_pc sim_if sim_uart_rx sim_bus_xbar sim_bus_xbar_atomic sim_cpu_boot_decode sim_cpu_fwd sim_cpu_lw sim_cpu_fib clean
 
 list:
 	fusesoc --cores-root . core list || true
@@ -30,6 +30,15 @@ sim_cpu_lw: tests/sample_lw.bin
 sim_cpu_fib: tests/sample_fib.bin
 	fusesoc --cores-root . run --target sim_cpu_fib ::rv32im || true
 	rm -r build
+
+sim_bus_xbar:
+	fusesoc --cores-root . run --target sim_bus_xbar ::rv32im || true
+	rm -r build
+
+sim_bus_xbar_atomic:
+	fusesoc --cores-root . run --target sim_bus_xbar_atomic ::rv32im || true
+	rm -r build
+
 
 test_all: sim_cpu_boot_decode sim_cpu_fwd sim_cpu_lw sim_cpu_fib
 
