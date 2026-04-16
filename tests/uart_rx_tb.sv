@@ -72,7 +72,7 @@ module uart_rx_tb;
                 #(CLKS_PER_BIT * CLK_PERIOD_NS);
             end
 
-            // No stop bit — drive line low instead
+            // No stop bit - drive line low instead
             rx0 = 0;
             #(CLKS_PER_BIT * CLK_PERIOD_NS);
 
@@ -131,7 +131,7 @@ module uart_rx_tb;
         #(1000 * CLK_PERIOD_NS);
 
         // ----------------------------------------------------------
-        // Case 3: byte without stop bit (framing error — data_valid
+        // Case 3: byte without stop bit (framing error - data_valid
         //         should NOT be asserted)
         // ----------------------------------------------------------
         $display("\n--- Case 3: byte without stop bit (framing error) ---");

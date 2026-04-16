@@ -1,11 +1,12 @@
 module uart_rx #(
-    parameter logic [15:0] CLKS_PER_BIT = 27_000_000 / 115_200
+    // parameter logic [15:0] CLKS_PER_BIT = 27_000_000 / 115_200 REMOVED in favor of bit length
 ) (
-    input  logic       clk,
-    input  logic       reset,
-    input  logic       rx0,
-    output logic [7:0] data_out,
-    output logic       data_valid
+    input  logic        clk,
+    input  logic        reset,
+    input  logic        rx0,
+    input  logic [15:0] bit_len,    // bit length in clock pulses
+    output logic [ 7:0] data_out,
+    output logic        data_valid
 );
 
     typedef enum logic [2:0] {
@@ -34,7 +35,7 @@ module uart_rx #(
 
         end else begin
             rx1 <= rx0;
-            rx  <= rx1;
+            rx <= rx1;
             data_valid <= '0;  // single-cycle pulse
 
             if (s != READY) middle_counter <= is_middle ? '0 : middle_counter + 1'd1;
@@ -42,7 +43,7 @@ module uart_rx #(
             unique case (s)
                 READY: begin
                     if (rx == '0) begin
-                        middle_counter <= (CLKS_PER_BIT) >> 1;  // set timer to half-bit
+                        middle_counter <= {1'b0, bit_len[15:1]};  // set timer to half-bit time
                         s <= START;
                     end
                 end
