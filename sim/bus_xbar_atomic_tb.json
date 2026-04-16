@@ -1,7 +1,7 @@
 {
   "extensionVersion": "1.5.2",
   "fileName": "c:\\Users\\kytka\\source\\learning\\FPGA_gowin\\rv32im\\sim\\bus_xbar_atomic_tb.fst",
-  "markerTime": 50000,
+  "markerTime": 245000,
   "altMarkerTime": null,
   "displayTimeUnit": "ps",
   "selectedSignal": {
@@ -504,7 +504,7 @@
     {
       "dataType": "signal-group",
       "groupName": "M3",
-      "collapseState": 2,
+      "collapseState": 1,
       "children": [
         {
           "dataType": "netlist-variable",
@@ -667,7 +667,7 @@
     {
       "dataType": "signal-group",
       "groupName": "M4",
-      "collapseState": 2,
+      "collapseState": 1,
       "children": [
         {
           "dataType": "netlist-variable",

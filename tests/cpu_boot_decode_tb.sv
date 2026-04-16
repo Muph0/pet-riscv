@@ -178,7 +178,7 @@ module cpu_boot_decode_tb;
     // Watchdog
     initial begin
         #50ms;
-        $display("FATAL: Watchdog timeout — simulation hung.");
+        $display("FATAL: Watchdog timeout - simulation hung.");
         $dumpflush;
         $finish;
     end

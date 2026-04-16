@@ -3,7 +3,7 @@ interface wishbone #(
     parameter DATA_WIDTH = 32
 ) (
     input logic clk,
-    input logic rst
+    input logic reset
 );
 
     // --- Master to Slave Signals ---
@@ -21,10 +21,10 @@ interface wishbone #(
     logic                  rty;  // Retry: Indicates Slave is busy (in use by another master)
 
     // Port for the Master (CPU, DMA, etc.)
-    modport master(output adr, mtos, sel, we, cyc, stb, input stom, ack, err, rty, clk, rst);
+    modport master(output adr, mtos, sel, we, cyc, stb, input stom, ack, err, rty, clk, reset);
 
     // Port for the Slave (Memory, UART, etc.)
-    modport slave(input adr, mtos, sel, we, cyc, stb, clk, rst, output stom, ack, err, rty);
+    modport slave(input adr, mtos, sel, we, cyc, stb, clk, reset, output stom, ack, err, rty);
 
 endinterface
 
@@ -62,10 +62,10 @@ module bus_xbar_ctrl #(
     // synthesis translate_on
 
     // Using clock and reset from the first master interface
-    // (Assuming synchronous bus where all interfaces share clk/rst)
-    logic clk, rst;
-    assign clk = m_bus[0].clk;
-    assign rst = m_bus[0].rst;
+    // (Assuming synchronous bus where all interfaces share clk/reset)
+    logic clk, reset;
+    assign clk   = m_bus[0].clk;
+    assign reset = m_bus[0].reset;
 
     // ==============================================================================
     // FLAT SIGNAL ARRAYS
@@ -167,7 +167,7 @@ module bus_xbar_ctrl #(
 
     // 2. Stateful Arbitration (Sequential)
     always_ff @(posedge clk) begin
-        if (rst) begin
+        if (reset) begin
             for (int s = 0; s < NS; s++) begin
                 s_busy[s]  <= 1'b0;
                 s_owner[s] <= 0;

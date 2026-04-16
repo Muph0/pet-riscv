@@ -1,10 +1,10 @@
 // =============================================================================
-// bus_xbar_atomic_tb.sv — 5-master atomic read-modify-write stress test
+// bus_xbar_atomic_tb.sv - 5-master atomic read-modify-write stress test
 //
 // Topology : NM=5 masters / NS=1 slave (single 32-bit register at REG_ADDR)
 //
 // Each master repeatedly executes the following sequence
-// (keeping CYC high across both read and write — the crossbar lock
+// (keeping CYC high across both read and write - the crossbar lock
 //  prevents any other master from interleaving):
 //
 //   1. Assert CYC  (grab the bus lock)
@@ -40,7 +40,7 @@ module wb_reg_slave (
 
     // Registered write
     always_ff @(posedge bus.clk) begin
-        if (bus.rst)
+        if (bus.reset)
             reg_val <= '0;
         else if (bus.cyc & bus.stb & bus.we)
             reg_val <= bus.mtos;
@@ -66,7 +66,7 @@ module bus_xbar_atomic_tb;
 
     localparam int N_ITER = 20;   // iterations per master
 
-    // Prime numbers — each master adds its own to the shared register
+    // Prime numbers - each master adds its own to the shared register
     localparam int P0 = 17;
     localparam int P1 = 13;
     localparam int P2 = 11;
@@ -90,11 +90,11 @@ module bus_xbar_atomic_tb;
     // =========================================================================
     // Interfaces
     // =========================================================================
-    wishbone wb_m[NM] (.clk(clk), .rst(rst));
-    wishbone wb_s[NS] (.clk(clk), .rst(rst));
+    wishbone wb_m[NM] (.clk(clk), .reset(rst));
+    wishbone wb_s[NS] (.clk(clk), .reset(rst));
 
     // =========================================================================
-    // DUT — Crossbar
+    // DUT - Crossbar
     // =========================================================================
     bus_xbar_ctrl #(
         .NM     (NM),
@@ -107,7 +107,7 @@ module bus_xbar_atomic_tb;
     );
 
     // =========================================================================
-    // Slave — one register
+    // Slave - one register
     // =========================================================================
     wb_reg_slave slave0 (.bus(wb_s[0]));
 
@@ -123,7 +123,7 @@ module bus_xbar_atomic_tb;
     endtask
 
     // =========================================================================
-    // Idle helper (unrolled — no loop-variable interface access)
+    // Idle helper (unrolled - no loop-variable interface access)
     // =========================================================================
     task automatic idle_all();
         wb_m[0].adr='0; wb_m[0].mtos='0; wb_m[0].sel=4'hF; wb_m[0].we=0; wb_m[0].cyc=0; wb_m[0].stb=0;
@@ -158,14 +158,14 @@ module bus_xbar_atomic_tb;
         automatic logic [31:0] rdata;
         sel = 4'hF;
         repeat (iterations) begin
-            // READ — assert CYC to grab the crossbar lock
+            // READ - assert CYC to grab the crossbar lock
             @(negedge clk);
             cyc=1; adr=REG_ADDR; we=0; stb=1;
             @(posedge clk); #1;
             while (!ack) begin @(posedge clk); #1; end
             rdata = stom;
 
-            // WRITE — CYC remains high, slave stays locked to this master
+            // WRITE - CYC remains high, slave stays locked to this master
             @(negedge clk);
             mtos = rdata + prime; we = 1;
             @(posedge clk); #1;
@@ -201,7 +201,7 @@ module bus_xbar_atomic_tb;
         // Spawn all 5 masters concurrently.
         //
         // Each master keeps CYC high across its read AND write, so the
-        // crossbar lock is held for the entire RMW — guaranteeing atomicity.
+        // crossbar lock is held for the entire RMW - guaranteeing atomicity.
         //
         // All interface accesses use constant indices (no loop variable)
         // to satisfy ModelSim's interface array elaboration requirement.
@@ -250,7 +250,7 @@ module bus_xbar_atomic_tb;
         $display("\n=====================================================");
         $display("  RESULT: %0d PASSED, %0d FAILED", pass_count, fail_count);
         if (fail_count == 0) $display("  ALL TESTS PASSED");
-        else                 $display("  SOME TESTS FAILED — atomicity violation?");
+        else                 $display("  SOME TESTS FAILED - atomicity violation?");
         $display("=====================================================");
 
         $finish;

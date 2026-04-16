@@ -1,5 +1,5 @@
 // =============================================================================
-// bus_xbar_tb.sv — Verification testbench for bus_xbar_ctrl
+// bus_xbar_tb.sv - Verification testbench for bus_xbar_ctrl
 //
 // Test categories (from verification plan):
 //   1. Reset and Configuration Initialization
@@ -47,12 +47,12 @@ module bus_xbar_tb;
     // Interfaces
     // =========================================================================
     wishbone wb_m[NM] (
-        .clk(clk),
-        .rst(rst)
+        .clk  (clk),
+        .reset(rst)
     );
     wishbone wb_s[NS] (
-        .clk(clk),
-        .rst(rst)
+        .clk  (clk),
+        .reset(rst)
     );
 
     // =========================================================================
@@ -69,7 +69,7 @@ module bus_xbar_tb;
     );
 
     // =========================================================================
-    // Category 3.2 submodule — 3-master priority cascade
+    // Category 3.2 submodule - 3-master priority cascade
     // =========================================================================
     logic sub3_rst = 1'b1;  // held high until test_3_arbitration reaches 3.2
     logic sub3_done;
@@ -154,7 +154,7 @@ module bus_xbar_tb;
     endtask
 
     // =========================================================================
-    // Category 1 — Reset and Configuration Initialization
+    // Category 1 - Reset and Configuration Initialization
     // =========================================================================
     task automatic test_1_reset();
         $display("\n--- Category 1: Reset and Configuration ---");
@@ -193,14 +193,14 @@ module bus_xbar_tb;
     endtask
 
     // =========================================================================
-    // Category 2 — Basic Routing & Connectivity
+    // Category 2 - Basic Routing & Connectivity
     // =========================================================================
     task automatic test_2_routing();
         logic [31:0] walking;
         $display("\n--- Category 2: Basic Routing & Connectivity ---");
 
         // ------------------------------------------------------------------
-        // 2.1  Forward Path Integrity — walking-1 / walking-0 on all fields
+        // 2.1  Forward Path Integrity - walking-1 / walking-0 on all fields
         // ------------------------------------------------------------------
         apply_reset();
         // Lock M0 → S0
@@ -237,7 +237,7 @@ module bus_xbar_tb;
         tick(2);
 
         // ------------------------------------------------------------------
-        // 2.2  Return Path Integrity — walking-1 on slave return fields
+        // 2.2  Return Path Integrity - walking-1 on slave return fields
         // ------------------------------------------------------------------
         apply_reset();
         wb_m[0].cyc = 1;
@@ -322,13 +322,13 @@ module bus_xbar_tb;
     endtask
 
     // =========================================================================
-    // Category 3 — Arbitration and Priority
+    // Category 3 - Arbitration and Priority
     // =========================================================================
     task automatic test_3_arbitration();
         $display("\n--- Category 3: Arbitration & Priority ---");
 
         // ------------------------------------------------------------------
-        // 3.1  Simultaneous Contention: both masters request S0 together — M0 wins
+        // 3.1  Simultaneous Contention: both masters request S0 together - M0 wins
         // ------------------------------------------------------------------
         apply_reset();
         @(negedge clk);
@@ -378,7 +378,7 @@ module bus_xbar_tb;
         tick(2);
 
         // ------------------------------------------------------------------
-        // 3.2  Priority Cascade — executed via 3-master submodule
+        // 3.2  Priority Cascade - executed via 3-master submodule
         // ------------------------------------------------------------------
         $display("\n--- Category 3.2: Priority Cascade (3-master submodule) ---");
         sub3_rst = 1'b0;  // release: submodule's initial block wakes up
@@ -390,7 +390,7 @@ module bus_xbar_tb;
     endtask
 
     // =========================================================================
-    // Category 4 — Stateful Locking
+    // Category 4 - Stateful Locking
     // =========================================================================
     task automatic test_4_locking();
         $display("\n--- Category 4: Stateful Locking ---");
@@ -462,7 +462,7 @@ module bus_xbar_tb;
     endtask
 
     // =========================================================================
-    // Category 5 — Boundary Conditions and Error Handling
+    // Category 5 - Boundary Conditions and Error Handling
     // =========================================================================
     task automatic test_5_boundaries();
         $display("\n--- Category 5: Boundary Conditions & Error Handling ---");
@@ -489,7 +489,7 @@ module bus_xbar_tb;
         full_idle();
         tick(2);
 
-        // 5.3  S_END[0] == S_START[1] — must NOT map to S0; maps to S1
+        // 5.3  S_END[0] == S_START[1] - must NOT map to S0; maps to S1
         apply_reset();
         @(negedge clk);
         wb_m[0].cyc = 1;
@@ -527,7 +527,7 @@ module bus_xbar_tb;
     endtask
 
     // =========================================================================
-    // Category 6 — Protocol Violations, Edge Cases, and Paranoia
+    // Category 6 - Protocol Violations, Edge Cases, and Paranoia
     // =========================================================================
     task automatic test_6_edge_cases();
         $display("\n--- Category 6: Edge Cases & Protocol Violations ---");
@@ -545,7 +545,7 @@ module bus_xbar_tb;
         tick(2);  // S0 locked
 
         @(negedge clk);
-        wb_m[0].adr = ADDR_S1;  // Address mutiny — cyc stays high
+        wb_m[0].adr = ADDR_S1;  // Address mutiny - cyc stays high
         wb_s[0].ack = 1;  // S0 slave responds (but M0 no longer targets it)
         #1;
         check("6.1 Address mutiny: S0 still locked by M0",
@@ -730,15 +730,15 @@ endmodule
 module bus_xbar_bad_overlap_tb;
     logic clk = 0, rst = 0;
     wishbone wb_m[1] (
-        .clk(clk),
-        .rst(rst)
+        .clk  (clk),
+        .reset(rst)
     );
     wishbone wb_s[2] (
-        .clk(clk),
-        .rst(rst)
+        .clk  (clk),
+        .reset(rst)
     );
 
-    // S0=[0x000, 0x200), S1=[0x100, 0x300) — deliberate overlap
+    // S0=[0x000, 0x200), S1=[0x100, 0x300) - deliberate overlap
     bus_xbar_ctrl #(
         .NM     (1),
         .NS     (2),
@@ -763,12 +763,12 @@ endmodule
 module bus_xbar_invalid_range_tb;
     logic clk = 0, rst = 0;
     wishbone wb_m[1] (
-        .clk(clk),
-        .rst(rst)
+        .clk  (clk),
+        .reset(rst)
     );
     wishbone wb_s[1] (
-        .clk(clk),
-        .rst(rst)
+        .clk  (clk),
+        .reset(rst)
     );
 
     // S_START > S_END: invalid
@@ -790,7 +790,7 @@ endmodule
 
 
 // =============================================================================
-// 3.2  Priority Cascade — submodule driven by bus_xbar_tb.
+// 3.2  Priority Cascade - submodule driven by bus_xbar_tb.
 //
 // clk/rst are inputs: the parent (bus_xbar_tb) controls timing.
 // done goes high when all assertions are complete; the parent collects
@@ -807,12 +807,12 @@ module bus_xbar_3m_sub (
     localparam logic [31:0] S_END3[2] = '{32'h1000_0000, 32'h3000_0000};
 
     wishbone wb_m[3] (
-        .clk(clk),
-        .rst(rst)
+        .clk  (clk),
+        .reset(rst)
     );
     wishbone wb_s[2] (
-        .clk(clk),
-        .rst(rst)
+        .clk  (clk),
+        .reset(rst)
     );
 
     bus_xbar_ctrl #(
@@ -840,7 +840,7 @@ module bus_xbar_3m_sub (
         p3 = 0;
         f3 = 0;
 
-        // Idle buses while parent holds reset high (unrolled — constant indices)
+        // Idle buses while parent holds reset high (unrolled - constant indices)
         wb_m[0].adr = '0;
         wb_m[0].mtos = '0;
         wb_m[0].sel = '0;
