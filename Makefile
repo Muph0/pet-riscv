@@ -40,7 +40,7 @@ sim_bus_xbar_atomic:
 	rm -r build
 
 
-test_all: sim_cpu_boot_decode sim_cpu_fwd sim_cpu_lw sim_cpu_fib
+test_all: sim_uart_rx sim_cpu_boot_decode sim_cpu_fwd sim_cpu_lw sim_cpu_fib sim_bus_xbar sim_bus_xbar_atomic
 
 clean:
 	rm -rf build

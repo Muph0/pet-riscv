@@ -19,7 +19,9 @@ interface stagePC_face;
 endinterface
 
 
-module stagePC (
+module stagePC #(
+    parameter logic [31:0] PC_RESET = 32'h0000_1000
+) (
     input clk,
     stagePC_face.in io
 );
@@ -27,7 +29,7 @@ module stagePC (
     assign io.pc_next = io.pc_redirect ? {io.pc_target, 2'b00} : io.pc + 4;
 
     always_ff @(posedge clk) begin
-        if (io.reset) io.pc <= '0;
+        if (io.reset) io.pc <= PC_RESET;
         else if (io.advance) io.pc <= io.pc_next;
     end
 

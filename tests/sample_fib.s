@@ -9,7 +9,7 @@
 li   a, 0               ; a = fib(0) = 0
 li   b, 1               ; b = fib(1) = 1
 li   cnt, 38            ; counter = 38 (pre-store fib(0) and fib(1))
-li   ptr, 0             ; ptr = 0
+lui  ptr, 2h              ; ptr = 0x2000 (BSRAM base)
 
 sw   a, 0(ptr)          ; store fib(0)
 addi ptr, ptr, 4        ; ptr += 4

@@ -4,12 +4,8 @@
   "markerTime": 2077276230,
   "altMarkerTime": null,
   "displayTimeUnit": "µs",
-  "selectedSignal": {
-    "name": "cpu_fwd_tb.dut.pipe.id_io.fw_wb",
-    "msb": -1,
-    "lsb": -1
-  },
-  "zoomRatio": 0.0023182401830297303,
+  "selectedSignal": {},
+  "zoomRatio": 6.122540177652491e-7,
   "scrollLeft": 2076967570,
   "displayedSignals": [
     {
@@ -27,7 +23,7 @@
     },
     {
       "dataType": "netlist-variable",
-      "netlistId": 65,
+      "netlistId": 464,
       "name": "cpu_fwd_tb.dut.pipe.halt",
       "numberFormat": "binary",
       "colorIndex": 0,
@@ -40,20 +36,19 @@
     },
     {
       "dataType": "netlist-variable",
-      "netlistId": 66,
       "name": "cpu_fwd_tb.dut.pipe.loading",
-      "numberFormat": "binary",
+      "numberFormat": "enum",
       "colorIndex": 0,
       "rowHeight": 1,
       "verticalScale": 1,
       "nameType": "fullPath",
       "customName": "loading",
-      "renderType": "binary",
+      "renderType": "multiBit",
       "valueLinkCommand": ""
     },
     {
       "dataType": "netlist-variable",
-      "netlistId": 64,
+      "netlistId": 463,
       "name": "cpu_fwd_tb.dut.pipe.reset",
       "numberFormat": "binary",
       "colorIndex": 0,
@@ -66,7 +61,7 @@
     },
     {
       "dataType": "netlist-variable",
-      "netlistId": 23,
+      "netlistId": 22,
       "name": "cpu_fwd_tb.dut.uart_data",
       "numberFormat": "hexadecimal",
       "colorIndex": 3,
@@ -84,7 +79,7 @@
       "children": [
         {
           "dataType": "netlist-variable",
-          "netlistId": 108,
+          "netlistId": 489,
           "name": "cpu_fwd_tb.dut.pipe.pc_io.reset",
           "numberFormat": "binary",
           "colorIndex": 0,
@@ -97,7 +92,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 109,
+          "netlistId": 490,
           "name": "cpu_fwd_tb.dut.pipe.pc_io.advance",
           "numberFormat": "binary",
           "colorIndex": 0,
@@ -110,7 +105,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 112,
+          "netlistId": 493,
           "name": "cpu_fwd_tb.dut.pipe.pc_io.pc",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -123,7 +118,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 113,
+          "netlistId": 494,
           "name": "cpu_fwd_tb.dut.pipe.pc_io.pc_next",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -136,7 +131,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 110,
+          "netlistId": 491,
           "name": "cpu_fwd_tb.dut.pipe.pc_io.pc_redirect",
           "numberFormat": "binary",
           "colorIndex": 0,
@@ -149,7 +144,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 111,
+          "netlistId": 492,
           "name": "cpu_fwd_tb.dut.pipe.pc_io.pc_target",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -169,7 +164,7 @@
       "children": [
         {
           "dataType": "netlist-variable",
-          "netlistId": 114,
+          "netlistId": 495,
           "name": "cpu_fwd_tb.dut.pipe.if_io.reset",
           "numberFormat": "binary",
           "colorIndex": 0,
@@ -182,7 +177,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 115,
+          "netlistId": 496,
           "name": "cpu_fwd_tb.dut.pipe.if_io.enable",
           "numberFormat": "binary",
           "colorIndex": 0,
@@ -195,7 +190,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 121,
+          "netlistId": 498,
           "name": "cpu_fwd_tb.dut.pipe.if_io.pc",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -208,20 +203,19 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 116,
           "name": "cpu_fwd_tb.dut.pipe.if_io.loading",
-          "numberFormat": "binary",
+          "numberFormat": "enum",
           "colorIndex": 0,
           "rowHeight": 1,
           "verticalScale": 1,
           "nameType": "fullPath",
           "customName": "loading",
-          "renderType": "binary",
+          "renderType": "multiBit",
           "valueLinkCommand": ""
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 120,
+          "netlistId": 497,
           "name": "cpu_fwd_tb.dut.pipe.if_io.instr",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -241,7 +235,7 @@
       "children": [
         {
           "dataType": "netlist-variable",
-          "netlistId": 122,
+          "netlistId": 500,
           "name": "cpu_fwd_tb.dut.pipe.id_io.reset",
           "numberFormat": "binary",
           "colorIndex": 0,
@@ -254,7 +248,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 123,
+          "netlistId": 501,
           "name": "cpu_fwd_tb.dut.pipe.id_io.enable",
           "numberFormat": "binary",
           "colorIndex": 0,
@@ -267,7 +261,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 268,
+          "netlistId": 589,
           "name": "cpu_fwd_tb.dut.pipe.sID.instr",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -280,7 +274,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 274,
+          "netlistId": 595,
           "name": "cpu_fwd_tb.dut.pipe.sID.funct7",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -293,7 +287,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 271,
+          "netlistId": 592,
           "name": "cpu_fwd_tb.dut.pipe.sID.funct3",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -306,7 +300,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 275,
+          "netlistId": 596,
           "name": "cpu_fwd_tb.dut.pipe.sID.imm",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -319,7 +313,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 270,
+          "netlistId": 591,
           "name": "cpu_fwd_tb.dut.pipe.sID.rd",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -332,7 +326,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 272,
+          "netlistId": 593,
           "name": "cpu_fwd_tb.dut.pipe.sID.rs1",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -345,7 +339,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 273,
+          "netlistId": 594,
           "name": "cpu_fwd_tb.dut.pipe.sID.rs2",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -358,7 +352,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 132,
+          "netlistId": 512,
           "name": "cpu_fwd_tb.dut.pipe.id_io.alu_mul",
           "numberFormat": "binary",
           "colorIndex": 0,
@@ -371,7 +365,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 131,
+          "netlistId": 511,
           "name": "cpu_fwd_tb.dut.pipe.id_io.alu_negb_shar",
           "numberFormat": "binary",
           "colorIndex": 0,
@@ -384,7 +378,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 130,
+          "netlistId": 510,
           "name": "cpu_fwd_tb.dut.pipe.id_io.alu_op",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -397,46 +391,43 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 124,
           "name": "cpu_fwd_tb.dut.pipe.id_io.fw_ex",
-          "numberFormat": "binary",
+          "numberFormat": "enum",
           "colorIndex": 0,
           "rowHeight": 1,
           "verticalScale": 1,
           "nameType": "fullPath",
           "customName": "fw_ex",
-          "renderType": "binary",
+          "renderType": "multiBit",
           "valueLinkCommand": ""
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 125,
           "name": "cpu_fwd_tb.dut.pipe.id_io.fw_mem",
-          "numberFormat": "binary",
+          "numberFormat": "enum",
           "colorIndex": 0,
           "rowHeight": 1,
           "verticalScale": 1,
           "nameType": "fullPath",
           "customName": "fw_mem",
-          "renderType": "binary",
+          "renderType": "multiBit",
           "valueLinkCommand": ""
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 126,
           "name": "cpu_fwd_tb.dut.pipe.id_io.fw_wb",
-          "numberFormat": "binary",
+          "numberFormat": "enum",
           "colorIndex": 0,
           "rowHeight": 1,
           "verticalScale": 1,
           "nameType": "fullPath",
           "customName": "fw_wb",
-          "renderType": "binary",
+          "renderType": "multiBit",
           "valueLinkCommand": ""
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 133,
+          "netlistId": 513,
           "name": "cpu_fwd_tb.dut.pipe.id_io.mem_mode",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -449,7 +440,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 134,
+          "netlistId": 514,
           "name": "cpu_fwd_tb.dut.pipe.id_io.mem_width",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -462,7 +453,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 129,
+          "netlistId": 509,
           "name": "cpu_fwd_tb.dut.pipe.id_io.op_mem",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -475,7 +466,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 127,
+          "netlistId": 507,
           "name": "cpu_fwd_tb.dut.pipe.id_io.opA",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -488,7 +479,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 128,
+          "netlistId": 508,
           "name": "cpu_fwd_tb.dut.pipe.id_io.opB",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -501,7 +492,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 140,
+          "netlistId": 520,
           "name": "cpu_fwd_tb.dut.pipe.id_io.pc",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -514,7 +505,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 139,
+          "netlistId": 519,
           "name": "cpu_fwd_tb.dut.pipe.id_io.rd",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -527,7 +518,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 135,
+          "netlistId": 515,
           "name": "cpu_fwd_tb.dut.pipe.id_io.rs1",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -540,7 +531,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 136,
+          "netlistId": 516,
           "name": "cpu_fwd_tb.dut.pipe.id_io.rs2",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -553,7 +544,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 141,
+          "netlistId": 521,
           "name": "cpu_fwd_tb.dut.pipe.id_io.wb_en",
           "numberFormat": "binary",
           "colorIndex": 0,
@@ -573,7 +564,7 @@
       "children": [
         {
           "dataType": "netlist-variable",
-          "netlistId": 146,
+          "netlistId": 529,
           "name": "cpu_fwd_tb.dut.pipe.ex_io.alu_result",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -586,7 +577,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 143,
+          "netlistId": 526,
           "name": "cpu_fwd_tb.dut.pipe.ex_io.enable",
           "numberFormat": "binary",
           "colorIndex": 0,
@@ -599,7 +590,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 144,
+          "netlistId": 527,
           "name": "cpu_fwd_tb.dut.pipe.ex_io.fw_mem",
           "numberFormat": "binary",
           "colorIndex": 0,
@@ -612,7 +603,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 145,
+          "netlistId": 528,
           "name": "cpu_fwd_tb.dut.pipe.ex_io.fw_wb",
           "numberFormat": "binary",
           "colorIndex": 0,
@@ -625,7 +616,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 148,
+          "netlistId": 534,
           "name": "cpu_fwd_tb.dut.pipe.ex_io.mem_mode",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -638,7 +629,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 149,
+          "netlistId": 535,
           "name": "cpu_fwd_tb.dut.pipe.ex_io.mem_width",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -651,7 +642,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 147,
+          "netlistId": 533,
           "name": "cpu_fwd_tb.dut.pipe.ex_io.op_mem",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -664,7 +655,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 154,
+          "netlistId": 540,
           "name": "cpu_fwd_tb.dut.pipe.ex_io.pc",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -677,7 +668,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 153,
+          "netlistId": 539,
           "name": "cpu_fwd_tb.dut.pipe.ex_io.rd",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -690,7 +681,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 142,
+          "netlistId": 525,
           "name": "cpu_fwd_tb.dut.pipe.ex_io.reset",
           "numberFormat": "binary",
           "colorIndex": 0,
@@ -703,7 +694,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 150,
+          "netlistId": 536,
           "name": "cpu_fwd_tb.dut.pipe.ex_io.rs1",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -716,7 +707,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 151,
+          "netlistId": 537,
           "name": "cpu_fwd_tb.dut.pipe.ex_io.rs2",
           "numberFormat": "hexadecimal",
           "colorIndex": 3,
@@ -729,7 +720,7 @@
         },
         {
           "dataType": "netlist-variable",
-          "netlistId": 152,
+          "netlistId": 538,
           "name": "cpu_fwd_tb.dut.pipe.ex_io.wb_en",
           "numberFormat": "binary",
           "colorIndex": 0,

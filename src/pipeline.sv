@@ -1,13 +1,13 @@
-module pipeline (
+module pipeline #(
+    parameter logic [31:0] PC_RESET = 32'h0000_1000
+) (
     input logic clk,
     input logic reset,
     input logic halt,
 
-    // Bootloader memory port
-    input logic        loading,
-    input logic [31:0] bl_addr,
-    input logic [ 7:0] bl_data,
-    input logic        bl_write
+    // Wishbone master interfaces (directly connected to crossbar)
+    wishbone.master ibus,  // instruction fetch
+    wishbone.master dbus   // data load/store
 );
 
     // --- Pipeline interfaces ---
@@ -22,21 +22,19 @@ module pipeline (
     assign pc_io.pc_redirect = ex_io.branch_taken;
     assign pc_io.pc_target   = ex_io.branch_target[31:2];
 
-    stagePC sPC (
+    stagePC #(
+        .PC_RESET(PC_RESET)
+    ) sPC (
         .clk,
         .io(pc_io.in)
     );
 
     // --- IF stage ---
-    assign if_io.loading  = loading;
-    assign if_io.bl_addr  = bl_addr;
-    assign if_io.bl_data  = bl_data;
-    assign if_io.bl_write = bl_write;
-
     stageIF sIF (
         .clk,
         .io  (if_io.in),
-        .prev(pc_io.prev)
+        .prev(pc_io.prev),
+        .ibus(ibus)
     );
 
     // --- ID stage ---
@@ -62,7 +60,8 @@ module pipeline (
     stageMEM sMEM (
         .clk,
         .io  (mem_io.in),
-        .prev(ex_io.prev)
+        .prev(ex_io.prev),
+        .dbus(dbus)
     );
 
     // --- WB stage ---
@@ -77,7 +76,6 @@ module pipeline (
         .clk,
         .reset,
         .halt,
-        .loading,
         .sPC (pc_io.hazard),
         .sIF (if_io.hazard),
         .sID (id_io.hazard),

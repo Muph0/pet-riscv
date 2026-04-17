@@ -4,78 +4,88 @@ interface stageIF_face;
     // Pipeline control
     logic        reset;
     logic        enable;
-    logic        loading;  // high while bootloader owns memory
-
-    // Bootloader memory write port
-    logic [31:0] bl_addr;
-    logic [ 7:0] bl_data;
-    logic        bl_write;
 
     // To next stage
     logic [31:0] instr;  // fetched instruction
     logic [31:0] pc;  // PC associated with fetched instruction
 
-    modport in(input reset, enable, loading, bl_addr, bl_data, bl_write, output instr, pc);
+    // Wishbone stall (fetch in progress)
+    logic        wb_stall;
+
+    modport in(input reset, enable, output instr, pc, wb_stall);
     modport prev(input instr, pc);  // "prev" as seen by the next stage
-    modport hazard(output reset, enable);
+    modport hazard(input wb_stall, output reset, enable);
 
 endinterface
 
 
-module stageIF
-    import mem_pkg::*;
-(
+module stageIF (
     input                   clk,
           stageIF_face.in   io,
-          stagePC_face.prev prev
+          stagePC_face.prev prev,
+          wishbone.master   ibus
 );
 
-    // BSRAM port mux signals
-    logic   [31:0] mem_address;
-    logic   [31:0] mem_data_in;
-    width_t        mem_width;
-    logic          mem_write_en;
+    // --- Fetch state machine ---
+    //   S_FETCH — bus transaction in progress, waiting for ACK
+    //   S_DONE  — instruction captured, pipeline may advance
+    //
+    // Reset (including halt) puts us in S_FETCH.  The bus is gated by
+    // !io.reset, so no transactions fire while halted.  When halt
+    // deasserts, io.reset drops and the bus starts fetching prev.pc
+    // (= PC_RESET).  wb_stall keeps the front-end frozen until ACK.
+    typedef enum logic {
+        S_FETCH = 1'b0,
+        S_DONE  = 1'b1
+    } state_t;
 
-    // Hold bsram read address when pipeline is stalled so that
-    // the synchronous bsram output stays in sync with the
-    // registered IF.pc (both reflect the same instruction).
-    logic   [31:0] held_addr;
+    state_t state;
+
+    // Captured instruction + associated PC (latched together on ACK)
+    logic [31:0] instr_r;
+    logic [31:0] pc_r;
+
     always_ff @(posedge clk) begin
-        if (io.reset) held_addr <= '0;
-        else if (io.enable) held_addr <= prev.pc;
-    end
-
-    always_comb begin
-        if (io.loading) begin
-            mem_address  = io.bl_addr;
-            mem_data_in  = {24'b0, io.bl_data};
-            mem_width    = WIDTH_8;
-            mem_write_en = io.bl_write;
+        if (io.reset) begin
+            state   <= S_FETCH;
+            instr_r <= '0;
+            pc_r    <= prev.pc;
         end else begin
-            mem_address  = io.enable ? prev.pc : held_addr;
-            mem_data_in  = '0;
-            mem_width    = WIDTH_32;
-            mem_write_en = '0;
+            case (state)
+                S_FETCH: begin
+                    if (ibus.ack) begin
+                        instr_r <= ibus.stom;
+                        pc_r    <= prev.pc;
+                        state   <= S_DONE;
+                    end
+                end
+
+                S_DONE: begin
+                    if (io.enable) state <= S_FETCH;
+                end
+            endcase
         end
     end
 
-    // --- Pipeline register: delay PC to match BSRAM latency ---
-    always_ff @(posedge clk) begin
-        if (io.reset) io.pc <= '0;
-        else if (io.enable) io.pc <= prev.pc;
-    end
+    // --- Drive instruction bus ---
+    // During S_FETCH: prev.pc is stable (PC frozen by front stall).
+    // During S_DONE+enable: early-start the next fetch with prev.pc_next
+    //   (the PC stage is about to advance on this same posedge).
+    // Bus is gated by !io.reset so no transactions fire during halt/flush.
+    wire bus_active = ((state == S_FETCH) || (state == S_DONE && io.enable)) && !io.reset;
 
-    // --- Instruction memory ---
-    bsram32 #(
-        .BYTES(8192)
-    ) instr_mem (
-        .clk     (clk),
-        .address (mem_address),
-        .data_in (mem_data_in),
-        .width   (mem_width),
-        .write_en(mem_write_en),
-        .data_out(io.instr),
-        .error   ()
-    );
+    assign ibus.adr    = (state == S_DONE && io.enable) ? prev.pc_next : prev.pc;
+    assign ibus.mtos   = '0;
+    assign ibus.sel    = 4'b1111;
+    assign ibus.we     = 1'b0;
+    assign ibus.cyc    = bus_active;
+    assign ibus.stb    = bus_active;
+
+    // Outputs to next stage — registered, in sync
+    assign io.instr    = instr_r;
+    assign io.pc       = pc_r;
+
+    // Stall while fetch is in progress (registered state, no comb loop)
+    assign io.wb_stall = (state == S_FETCH);
 
 endmodule

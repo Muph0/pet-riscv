@@ -145,7 +145,7 @@ module cpu_boot_decode_tb;
         // Phase 3: Check register results
         $display("\n--- Phase 3: Register check ---");
         check_reg("lui+addi x1", 1, 32'h12344FFF);
-        check_reg("auipc x2", 2, 32'h00001004);
+        check_reg("auipc x2", 2, 32'h00002004);
         check_reg("slti x3", 3, 32'h0);
         check_reg("sltiu x4", 4, 32'h0);
         check_reg("xori x5", 5, 32'h12344C00);
@@ -154,15 +154,15 @@ module cpu_boot_decode_tb;
         check_reg("slli x8", 8, 32'h2344FFF0);
         check_reg("srli x9", 9, 32'h012344FF);
         check_reg("srai x10", 10, 32'h012344FF);
-        check_reg("add x11", 11, 32'h12346003);
-        check_reg("sub x12", 12, 32'h12343FFB);
+        check_reg("add x11", 11, 32'h12347003);
+        check_reg("sub x12", 12, 32'h12342FFB);
         check_reg("sll x13", 13, 32'h4FFF0000);
         check_reg("slt x14", 14, 32'h0);
         check_reg("sltu x15", 15, 32'h0);
-        check_reg("xor x16", 16, 32'h12345FFB);
+        check_reg("xor x16", 16, 32'h12346FFB);
         check_reg("srl x17", 17, 32'h00001234);
         check_reg("sra x18", 18, 32'h00001234);
-        check_reg("or x19", 19, 32'h12345FFF);
+        check_reg("or x19", 19, 32'h12346FFF);
         check_reg("and x20", 20, 32'h00000004);
 
         // Summary

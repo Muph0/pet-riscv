@@ -8,6 +8,7 @@ filesets:
     files:
       - src/memory/mem_pkg.sv: {file_type: systemVerilogSource}
       - src/memory/bsram.sv: {file_type: systemVerilogSource}
+      - src/memory/wb_bsram.sv: {file_type: systemVerilogSource}
       - src/alu.sv: {file_type: systemVerilogSource}
       - src/regfile.sv: {file_type: systemVerilogSource}
       - src/stage01_pc.sv: {file_type: systemVerilogSource}
@@ -19,7 +20,8 @@ filesets:
       - src/hazard_ctl.sv: {file_type: systemVerilogSource}
       - src/pipeline.sv: {file_type: systemVerilogSource}
       - src/cpu_top.sv: {file_type: systemVerilogSource}
-      - src/peri/uart_rx.sv: {file_type: systemVerilogSource}
+      - src/fpga_top.sv: {file_type: systemVerilogSource}
+      - src/peri/uart.sv: {file_type: systemVerilogSource}
       - src/peri/bootloader.sv: {file_type: systemVerilogSource}
       - src/peri/bus.sv: {file_type: systemVerilogSource}
 

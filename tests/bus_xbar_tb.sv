@@ -19,9 +19,9 @@ module bus_xbar_tb;
     localparam int NM = 2;
     localparam int NS = 3;
 
-    // Address map
+    // Address map (S_END is inclusive — last valid byte address in each region)
     localparam logic [31:0] S_START[3] = '{32'h0000_0000, 32'h1000_0000, 32'h2000_0000};
-    localparam logic [31:0] S_END[3] = '{32'h1000_0000, 32'h1000_0100, 32'h3000_0000};
+    localparam logic [31:0] S_END[3] = '{32'h0FFF_FFFF, 32'h1000_00FF, 32'h2FFF_FFFF};
 
     // Representative addresses inside each slave region
     localparam logic [31:0] ADDR_S0 = 32'h0000_1000;
@@ -29,8 +29,8 @@ module bus_xbar_tb;
     localparam logic [31:0] ADDR_S2 = 32'h2000_1000;
     // Boundary addresses for category-5 tests
     localparam logic [31:0] ADDR_S0_LO = 32'h0000_0000;  // S_START[0]
-    localparam logic [31:0] ADDR_S0_HI = 32'h0FFF_FFFF;  // S_END[0]-1
-    localparam logic [31:0] ADDR_S0_OOB = 32'h1000_0000;  // S_END[0] == S_START[1]
+    localparam logic [31:0] ADDR_S0_HI = 32'h0FFF_FFFF;  // S_END[0] (inclusive)
+    localparam logic [31:0] ADDR_S0_OOB = 32'h1000_0000;  // S_START[1], outside S0
     localparam logic [31:0] ADDR_UNMAP = 32'h1000_0200;  // Between S1 end and S2 start
 
     localparam time CLK_PERIOD = 10ns;

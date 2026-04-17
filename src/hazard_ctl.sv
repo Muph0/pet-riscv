@@ -2,7 +2,6 @@ module hazard_ctl (
     input clk,
     input reset,
     input halt,
-    input loading,
 
     stagePC_face.hazard  sPC,
     stageIF_face.hazard  sIF,
@@ -56,20 +55,37 @@ module hazard_ctl (
     // that entered IF and ID after the branch.
     wire flush = sEX.branch_taken;
 
-    wire stall = halt || loading;
+    // ---- Stall domains ----
+    // back_freeze : halt or MEM bus wait → freeze entire pipeline
+    // front_freeze: IF bus wait or load-use → freeze PC/IF, bubble ID,
+    //               let EX/MEM/WB drain
+    wire if_stall = sIF.wb_stall;
+    wire mem_stall = sMEM.wb_stall;
 
-    // Default: pass through reset and advance to all stages
+    wire back_freeze = halt || mem_stall;
+    wire front_freeze = if_stall || load_stall;
+
     always_comb begin
+        // PC: advance when nothing stalls, OR on flush (branch redirect
+        //     must update PC even during a back-end stall so the target
+        //     is not lost).
         sPC.reset   = reset;
-        sPC.advance = !stall && !load_stall;
-        sIF.reset   = reset || flush;
-        sIF.enable  = !stall && !load_stall;
-        sID.reset   = reset || flush || (!stall && load_stall);  // bubble on stall or flush
-        sID.enable  = !stall && !load_stall;
+        sPC.advance = (!back_freeze && !front_freeze) || flush;
+
+        // IF: freeze on any stall.  Reset during halt/flush keeps the
+        //     fetch state machine in S_FETCH with the bus gated off.
+        sIF.reset   = reset || flush || halt;
+        sIF.enable  = !back_freeze && !front_freeze;
+
+        // ID: freeze on back stall; bubble on front stall or flush.
+        sID.reset   = reset || flush || (!back_freeze && front_freeze);
+        sID.enable  = !back_freeze && !front_freeze;
+
+        // EX / MEM: freeze on back stall only.
         sEX.reset   = reset;
-        sEX.enable  = !stall;
+        sEX.enable  = !back_freeze;
         sMEM.reset  = reset;
-        sMEM.enable = !stall;
+        sMEM.enable = !back_freeze;
     end
 
 endmodule

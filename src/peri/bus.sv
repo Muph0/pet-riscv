@@ -28,6 +28,33 @@ interface wishbone #(
 
 endinterface
 
+// Crossbar controller/arbiter for the Wishbone bus
+// ------------------------------------------------
+// This module implements a fully‑connected *star‑topology* Wishbone crossbar,
+// allowing NM masters to access NS slaves concurrently, provided they target
+// different slaves. Each slave has an independent arbitration domain.
+//
+// Key Features:
+// - **Address‑based routing:** Each slave is assigned a static, non‑overlapping
+//   address range via S_START[] / S_END[]. Masters are dynamically routed to
+//   the slave whose range matches the current address.
+// - **Per‑slave arbitration:** Each slave has its own arbiter. If multiple
+//   masters request the same slave, the arbiter grants access using a fixed
+//   priority scheme (lower‑index masters win). Other masters receive RTY until
+//   the slave becomes free.
+// - **Slave locking:** Once a master wins arbitration for a slave, that slave
+//   remains *locked* to the master until the master deasserts CYC. This ensures
+//   atomic multi‑cycle Wishbone transactions and prevents mid‑cycle preemption.
+// - **Parallelism:** Masters accessing *different* slaves proceed fully in
+//   parallel with no interference. Only masters contending for the same slave
+//   are serialized.
+// - **Return‑path demultiplexing:** Responses (ACK/ERR/RTY/data) from each slave
+//   are routed back only to the currently owning master. Non‑owners receive RTY
+//   if they attempt to access a busy slave.
+// - **Address error detection:** If a master asserts STB/CYC but its address
+//   does not match any slave range, the controller returns ERR.
+// - **Simulation‑time validation:** The initial block checks for invalid or
+//   overlapping address ranges and reports configuration errors early.
 module bus_xbar_ctrl #(
     parameter int NM = 2,  // Number of Masters
     parameter int NS = 3,  // Number of Slaves
@@ -43,15 +70,15 @@ module bus_xbar_ctrl #(
     // synthesis translate_off
     initial begin
         for (int i = 0; i < NS; i++) begin
-            // 1. Check for valid start/end range
-            if (S_START[i] >= S_END[i]) begin
+            // 1. Check for valid start/end range (END inclusive: START <= END)
+            if (S_START[i] > S_END[i]) begin
                 $error("XBAR CONFIG ERROR: Slave %0d has invalid range [0x%0h : 0x%0h]", i,
                        S_START[i], S_END[i]);
             end
 
             // 2. Check for overlapping ranges with other slaves
             for (int j = i + 1; j < NS; j++) begin
-                if ((S_START[i] < S_END[j]) && (S_START[j] < S_END[i])) begin
+                if ((S_START[i] <= S_END[j]) && (S_START[j] <= S_END[i])) begin
                     $error(
                         "XBAR CONFIG ERROR: Overlap between Slave %0d [0x%0h : 0x%0h] and Slave %0d [0x%0h : 0x%0h]",
                         i, S_START[i], S_END[i], j, S_START[j], S_END[j]);
@@ -137,7 +164,7 @@ module bus_xbar_ctrl #(
     endgenerate
 
     // ==============================================================================
-    // CROSSBAR ROUTING & ARBITRATION LOGIC  (all using flat arrays)
+    // CROSSBAR ROUTING & ARBITRATION LOGIC
     // ==============================================================================
 
     logic [NS-1:0] m_req  [NM];
@@ -156,7 +183,7 @@ module bus_xbar_ctrl #(
             for (int s = 0; s < NS; s++) begin
                 m_req[m][s] = 1'b0;
                 // Master requests slave if CYC is high and address matches
-                if (m_cyc_f[m] && (m_adr_f[m] >= S_START[s] && m_adr_f[m] < S_END[s])) begin
+                if (m_cyc_f[m] && (m_adr_f[m] >= S_START[s] && m_adr_f[m] <= S_END[s])) begin
                     m_req[m][s] = 1'b1;
                     matched[m]  = 1'b1;
                     target[m]   = s;

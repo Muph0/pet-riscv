@@ -22,13 +22,12 @@ module uart_rx_tb;
     // ------------------------------------------------------------
     // Instantiate DUT
     // ------------------------------------------------------------
-    uart_rx #(
-        .CLKS_PER_BIT(CLKS_PER_BIT)
-    ) dut (
-        .clk(clk),
-        .reset(reset),
-        .rx0(rx0),
-        .data_out(data_out),
+    uart_rx dut (
+        .clk       (clk),
+        .reset     (reset),
+        .rx0       (rx0),
+        .bit_len   (16'(CLKS_PER_BIT)),
+        .data_out  (data_out),
         .data_valid(data_valid)
     );
 
@@ -100,8 +99,12 @@ module uart_rx_tb;
         $display("\n--- Case 1: single byte ---");
         test_value = 8'hA5;
         $display("Sending byte: %02X", test_value);
-        send_uart_byte(test_value);
-        wait (data_valid == 1);
+        // Fork: start waiting for the posedge BEFORE sending so we don't
+        // miss the single-cycle pulse that fires mid-stop-bit.
+        fork
+            @(posedge data_valid);
+            send_uart_byte(test_value);
+        join
         $display("Received byte: %02X", data_out);
         if (data_out == test_value) $display("TEST PASSED");
         else $display("TEST FAILED: expected %02X, got %02X", test_value, data_out);
@@ -114,16 +117,20 @@ module uart_rx_tb;
         $display("\n--- Case 2: two bytes back to back ---");
         test_value = 8'h3C;
         $display("Sending first byte: %02X", test_value);
-        send_uart_byte(test_value);
-        wait (data_valid == 1);
+        fork
+            @(posedge data_valid);
+            send_uart_byte(test_value);
+        join
         $display("Received byte: %02X", data_out);
         if (data_out == test_value) $display("TEST PASSED");
         else $display("TEST FAILED: expected %02X, got %02X", test_value, data_out);
 
         test_value = 8'h7E;
         $display("Sending second byte: %02X", test_value);
-        send_uart_byte(test_value);
-        wait (data_valid == 1);
+        fork
+            @(posedge data_valid);
+            send_uart_byte(test_value);
+        join
         $display("Received byte: %02X", data_out);
         if (data_out == test_value) $display("TEST PASSED");
         else $display("TEST FAILED: expected %02X, got %02X", test_value, data_out);
@@ -145,6 +152,13 @@ module uart_rx_tb;
 
         #(1000 * CLK_PERIOD_NS);
         $dumpflush;
+        $finish;
+    end
+
+    // Watchdog — kills sim if it takes more than 50 ms of simulated time
+    initial begin
+        #50ms;
+        $display("WATCHDOG: simulation exceeded 50 ms — likely hung on wait(data_valid)");
         $finish;
     end
 

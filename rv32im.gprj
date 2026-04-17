@@ -5,16 +5,23 @@
     <Version>5</Version>
     <Device name="GW2A-18C" pn="GW2A-LV18PG256C8/I7">gw2a18c-011</Device>
     <FileList>
+        <File path="src/alu.sv" type="file.verilog" enable="1"/>
         <File path="src/cpu_top.sv" type="file.verilog" enable="1"/>
-        <File path="src/gowin_add32/gowin_add32.v" type="file.verilog" enable="1"/>
-        <File path="src/gowin_mults/gowin_mults.v" type="file.verilog" enable="1"/>
+        <File path="src/fpga_top.sv" type="file.verilog" enable="1"/>
+        <File path="src/hazard_ctl.sv" type="file.verilog" enable="1"/>
         <File path="src/memory/bsram.sv" type="file.verilog" enable="1"/>
         <File path="src/memory/mem_pkg.sv" type="file.verilog" enable="1"/>
-        <File path="src/peri/uart_rx.sv" type="file.verilog" enable="1"/>
+        <File path="src/peri/bootloader.sv" type="file.verilog" enable="1"/>
+        <File path="src/peri/bus.sv" type="file.verilog" enable="1"/>
+        <File path="src/peri/uart.sv" type="file.verilog" enable="1"/>
+        <File path="src/pipeline.sv" type="file.verilog" enable="1"/>
         <File path="src/regfile.sv" type="file.verilog" enable="1"/>
         <File path="src/stage01_pc.sv" type="file.verilog" enable="1"/>
         <File path="src/stage02_if.sv" type="file.verilog" enable="1"/>
         <File path="src/stage03_id.sv" type="file.verilog" enable="1"/>
+        <File path="src/stage04_ex.sv" type="file.verilog" enable="1"/>
+        <File path="src/stage05_mem.sv" type="file.verilog" enable="1"/>
+        <File path="src/stage06_wb.sv" type="file.verilog" enable="1"/>
         <File path="src/rv32im.cst" type="file.cst" enable="1"/>
     </FileList>
 </Project>

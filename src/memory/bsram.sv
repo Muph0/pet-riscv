@@ -17,7 +17,9 @@ module bsram32
     logic [31:0] memory[0:DEPTH-1];
 
     // Zero-init memory
+    // synthesis translate_off
     initial for (int i = 0; i < DEPTH; i++) memory[i] = '0;
+    // synthesis translate_on
 
     // Internal signals for steering
     logic   [ 1:0] addr_lsb_reg;
