@@ -1,5 +1,6 @@
 module cpu_top (
     input logic clk27,  // 27 MHz oscillator
+    input logic key2,   // Silicone Key 2 (active low) — resets bootloader
 
     input  logic pin_rx,
     output logic pin_tx,
@@ -9,46 +10,18 @@ module cpu_top (
 );
 
     // =========================================================================
-    // Internal reset — deasserts one cycle after power-on
+    // Reset — POR (1 cycle) + key2 press (active low, synchronized)
     // =========================================================================
-    logic reset = 1'b1;
-    always_ff @(posedge clk27) reset <= 1'b0;
+    logic por = 1'b1;
+    always_ff @(posedge clk27) por <= 1'b0;
 
-    // =========================================================================
-    // Bootloader path — standalone uart_rx → bootloader FSM → pipeline BSRAM
-    //
-    // This path is independent of the Wishbone bus: the bootloader loads
-    // programs without any CPU involvement, so it works before the CPU runs.
-    // =========================================================================
-    logic [7:0] uart_data;
-    logic       uart_valid;
+    logic key2_s1 = 1'b1, key2_s2 = 1'b1;
+    always_ff @(posedge clk27) begin
+        key2_s1 <= key2;
+        key2_s2 <= key2_s1;
+    end
 
-    uart_rx rx_bl (
-        .clk       (clk27),
-        .reset     (reset),
-        .rx0       (pin_rx),
-        .bit_len   (16'(27_000_000 / 115_200)),
-        .data_out  (uart_data),
-        .data_valid(uart_valid)
-    );
-
-    logic [31:0] bl_mem_addr;
-    logic [ 7:0] bl_mem_data;
-    logic        bl_mem_write;
-    logic        bl_run;
-    logic        bl_loading;
-
-    bootloader bl (
-        .clk       (clk27),
-        .reset     (reset),
-        .uart_data (uart_data),
-        .uart_valid(uart_valid),
-        .mem_addr  (bl_mem_addr),
-        .mem_data  (bl_mem_data),
-        .mem_write (bl_mem_write),
-        .run       (bl_run),
-        .loading   (bl_loading)
-    );
+    wire reset = por | ~key2_s2;
 
     // =========================================================================
     // Wishbone crossbar
@@ -106,16 +79,25 @@ module cpu_top (
         .s_bus('{uart_bus, ddr_bus, bsram_bus, rom_bus})
     );
 
-    // --- Slave 0: UART Wishbone wrapper ---
-    // Gate RX to idle (1) while bootloader is running so the periph
-    // does not capture bootloader traffic as application data.
+    // --- Slave 0: UART with integrated bootloader ---
+    wire [31:0] bl_mem_addr;
+    wire [ 7:0] bl_mem_data;
+    wire        bl_mem_write;
+    wire        bl_run;
+    wire        bl_loading;
+
     uart_wb #(
         .BASE_ADDR(UART_ADR),
         .END_ADDR (UART_END)
     ) u_uart (
-        .rx_pin(bl_run ? pin_rx : 1'b1),
-        .tx_pin(pin_tx),
-        .bus   (uart_bus)
+        .rx_pin      (pin_rx),
+        .tx_pin      (pin_tx),
+        .bus         (uart_bus),
+        .bl_mem_addr (bl_mem_addr),
+        .bl_mem_data (bl_mem_data),
+        .bl_mem_write(bl_mem_write),
+        .bl_run      (bl_run),
+        .bl_loading  (bl_loading)
     );
     // --- Slaves 2 & 3: Dual-port BSRAM (port A = IROM, port B = SRAM) ---
     wb_dp_4Kx32b u_dpram (
@@ -140,9 +122,9 @@ module cpu_top (
     );
 
     // =========================================================================
-    // Status LEDs
+    // Status LEDs (active low: 0 = LED on)
     // =========================================================================
-    assign led5 = !bl_loading;  // lit when done loading
-    assign led4 = bl_run;  // lit when CPU is running
+    assign led4 = !bl_loading;
+    assign led5 = !bl_run;
 
 endmodule

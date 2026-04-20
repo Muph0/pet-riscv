@@ -22,13 +22,14 @@ module cpu_fib_tb;
     // ------------------------------------------------------------
     cpu_top dut (
         .clk27 (clk),
+        .key2  (1'b1),
         .pin_rx(pin_rx),
         .pin_tx(pin_tx),
         .led4  (led4),
         .led5  (led5)
     );
 
-    wire loading = dut.bl.loading;
+    wire loading = dut.u_uart.bl.loading;
 
     // ------------------------------------------------------------
     // Clock generation
@@ -165,7 +166,7 @@ module cpu_fib_tb;
 
         // Phase 2: Release CPU
         $display("\n--- Phase 2: Running program (free-run) ---");
-        send_uart_byte(8'h52);  // 'R' = release
+        send_uart_byte(8'h44);  // 'D' = done/release
         repeat (2000) @(posedge clk);
 
         // Phase 3: Check data memory for Fibonacci values

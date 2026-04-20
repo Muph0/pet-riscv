@@ -1,5 +1,6 @@
 files.txt
 /.vscode
+pinout.md
 
 # Build artifacts (FuseSoC / Gowin IDE)
 /build/

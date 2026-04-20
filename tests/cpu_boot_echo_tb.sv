@@ -1,4 +1,4 @@
-module cpu_uart_echo_tb;
+module cpu_boot_echo_tb;
 
     // ------------------------------------------------------------
     // Parameters
@@ -7,15 +7,62 @@ module cpu_uart_echo_tb;
     localparam BAUD_RATE = 115_200;
     localparam CLKS_PER_BIT = CLK_FREQ / BAUD_RATE;
     localparam CLK_PERIOD_NS = 1_000_000_000ns / CLK_FREQ;
-    localparam BIN_FILE = "sample_uart_echo.bin";
+    localparam BIN_FILE = "boot_echo.bin";
 
     // ------------------------------------------------------------
     // DUT signals
     // ------------------------------------------------------------
     logic clk = 0;
-    logic pin_rx = 1;  // idle high
+    logic pin_rx = 1;
     logic pin_tx;
     logic led4, led5;
+
+    // ------------------------------------------------------------
+    // Expected data
+    // ------------------------------------------------------------
+    localparam int BANNER_LEN = 36;
+    logic [7:0] banner_bytes[BANNER_LEN] = '{
+        8'h48,
+        8'h65,
+        8'h6C,
+        8'h6C,
+        8'h6F,
+        8'h20,
+        8'h66,
+        8'h72,
+        8'h6F,
+        8'h6D,
+        8'h20,
+        8'h52,
+        8'h49,
+        8'h53,
+        8'h43,
+        8'h2D,
+        8'h56,
+        8'h21,
+        8'h20,
+        8'h54,
+        8'h79,
+        8'h70,
+        8'h65,
+        8'h20,
+        8'h73,
+        8'h6F,
+        8'h6D,
+        8'h65,
+        8'h74,
+        8'h68,
+        8'h69,
+        8'h6E,
+        8'h67,
+        8'h3A,
+        8'h0D,
+        8'h0A
+    };
+
+    localparam int N_ECHO = 4;
+    logic [7:0] test_bytes  [N_ECHO] = '{8'h61, 8'h42, 8'h7A, 8'h59};
+    logic [7:0] expect_bytes[N_ECHO] = '{8'h41, 8'h62, 8'h5A, 8'h79};
 
     // ------------------------------------------------------------
     // Instantiate DUT
@@ -37,38 +84,35 @@ module cpu_uart_echo_tb;
     always #(CLK_PERIOD_NS / 2) clk = ~clk;
 
     // ------------------------------------------------------------
-    // UART TX task (testbench → DUT)
+    // UART TX task (testbench -> DUT)
     // ------------------------------------------------------------
     task send_uart_byte(input [7:0] data);
         integer i;
         begin
-            pin_rx = 0;  // start bit
+            pin_rx = 0;
             repeat (CLKS_PER_BIT) @(posedge clk);
             for (i = 0; i < 8; i++) begin
                 pin_rx = data[i];
                 repeat (CLKS_PER_BIT) @(posedge clk);
             end
-            pin_rx = 1;  // stop bit
+            pin_rx = 1;
             repeat (CLKS_PER_BIT) @(posedge clk);
         end
     endtask
 
     // ------------------------------------------------------------
-    // UART RX task (DUT → testbench)
+    // UART RX task (DUT -> testbench)
     // ------------------------------------------------------------
     task recv_uart_byte(output [7:0] data);
         integer i;
         begin
-            // Wait for start bit (falling edge on pin_tx)
             @(negedge pin_tx);
-            // Sample in the middle of each bit
-            repeat (CLKS_PER_BIT / 2) @(posedge clk);  // middle of start bit
-            repeat (CLKS_PER_BIT) @(posedge clk);  // middle of bit 0
+            repeat (CLKS_PER_BIT / 2) @(posedge clk);
+            repeat (CLKS_PER_BIT) @(posedge clk);
             for (i = 0; i < 8; i++) begin
                 data[i] = pin_tx;
                 if (i < 7) repeat (CLKS_PER_BIT) @(posedge clk);
             end
-            // Wait through stop bit
             repeat (CLKS_PER_BIT) @(posedge clk);
         end
     endtask
@@ -86,6 +130,7 @@ module cpu_uart_echo_tb;
                 $display("FATAL: Could not open %s", filename);
                 $finish;
             end
+
             fsize = 0;
             while (!$feof(
                 fd
@@ -95,9 +140,9 @@ module cpu_uart_echo_tb;
             end
             $fclose(fd);
 
-            send_uart_byte(8'h57);  // 'W'
-            send_uart_byte(fsize[15:8]);  // size high
-            send_uart_byte(fsize[7:0]);  // size low
+            send_uart_byte(8'h57);
+            send_uart_byte(fsize[15:8]);
+            send_uart_byte(fsize[7:0]);
 
             fd = $fopen(filename, "rb");
             while (!$feof(
@@ -107,47 +152,69 @@ module cpu_uart_echo_tb;
                 if (r == 1) send_uart_byte(byte_val);
             end
             $fclose(fd);
+
             $display("[TB] Loaded %0d bytes from %s", fsize, filename);
         end
     endtask
 
     // ------------------------------------------------------------
-    // Error tracking
+    // RX collection and checks
     // ------------------------------------------------------------
+    logic [7:0] rx_fifo[$];
     int errors = 0;
-
-    // ------------------------------------------------------------
-    // Test data — lowercase letters to send
-    // ------------------------------------------------------------
-    localparam int N_TEST = 5;
-    logic [7:0] test_bytes     [N_TEST] = '{8'h68, 8'h65, 8'h6C, 8'h6C, 8'h6F};  // "hello"
-    logic [7:0] expect_bytes   [N_TEST] = '{8'h48, 8'h45, 8'h4C, 8'h4C, 8'h4F};  // "HELLO"
-
-    // ------------------------------------------------------------
-    // Receiver FIFO — collects all bytes from DUT tx in order
-    // ------------------------------------------------------------
-    logic [7:0] rx_fifo        [     $];
-    logic       rx_running = 0;
 
     initial begin
         logic [7:0] b;
         forever begin
             recv_uart_byte(b);
             rx_fifo.push_back(b);
-            $display("[TB-RX] Got 0x%02h ('%c')  (fifo size=%0d)", b, b, rx_fifo.size());
+            $display("[TB-RX] Got 0x%02h ('%c') (fifo size=%0d)", b, b, rx_fifo.size());
         end
     end
+
+    task wait_for_rx_count(input int expected_count, input int timeout_bits, input string phase);
+        int waited_bits;
+        begin
+            waited_bits = 0;
+            while (rx_fifo.size() < expected_count && waited_bits < timeout_bits) begin
+                repeat (CLKS_PER_BIT) @(posedge clk);
+                waited_bits++;
+            end
+            if (rx_fifo.size() < expected_count) begin
+                $display("FAIL [%s]: timeout waiting for %0d bytes, got %0d", phase,
+                         expected_count, rx_fifo.size());
+                errors++;
+            end
+        end
+    endtask
+
+    task check_and_pop_byte(input string phase, input int idx, input logic [7:0] expected);
+        logic [7:0] got;
+        begin
+            if (rx_fifo.size() == 0) begin
+                $display("FAIL [%s %0d]: no byte available", phase, idx);
+                errors++;
+            end else begin
+                got = rx_fifo.pop_front();
+                if (got !== expected) begin
+                    $display("FAIL [%s %0d]: got=0x%02h exp=0x%02h", phase, idx, got, expected);
+                    errors++;
+                end else begin
+                    $display("  OK [%s %0d] = 0x%02h ('%c')", phase, idx, got, got);
+                end
+            end
+        end
+    endtask
 
     // ------------------------------------------------------------
     // Main test sequence
     // ------------------------------------------------------------
     initial begin
-        $display("=== UART Echo Testbench ===");
+        $display("=== CPU Boot Echo Testbench ===");
 
         #(20 * CLK_PERIOD_NS);
 
-        // Phase 1: Load program via bootloader
-        $display("\n--- Phase 1: Loading program ---");
+        $display("\n--- Phase 1: Loading program via bootloader ---");
         send_binary_file(BIN_FILE);
 
         $display("[TB] Waiting for bootloader to finish...");
@@ -155,48 +222,29 @@ module cpu_uart_echo_tb;
         $display("[TB] Loading complete.");
         repeat (4) @(posedge clk);
 
-        // Phase 2: Release CPU
-        $display("\n--- Phase 2: Release CPU ---");
-        send_uart_byte(8'h44);  // 'D' = done/release
+        $display("\n--- Phase 2: Release CPU and capture banner ---");
+        send_uart_byte(8'h44);
+        wait_for_rx_count(BANNER_LEN, BANNER_LEN * 16, "banner");
 
-        // Wait for the program to start; discard any stale bytes
-        $display("[TB] Flushing stale echo bytes...");
-        repeat (CLKS_PER_BIT * 30) @(posedge clk);
-        // Discard anything received so far
-        while (rx_fifo.size() > 0) begin
-            $display("[TB] Discarding stale byte: 0x%02h", rx_fifo[0]);
-            void'(rx_fifo.pop_front());
+        for (int i = 0; i < BANNER_LEN; i++) begin
+            check_and_pop_byte("banner", i, banner_bytes[i]);
         end
 
-        // Phase 3: Send test bytes one at a time
-        $display("\n--- Phase 3: Sending test bytes ---");
-        for (int i = 0; i < N_TEST; i++) begin
-            $display("[TB] Sending byte %0d: 0x%02h ('%c')", i, test_bytes[i], test_bytes[i]);
-            send_uart_byte(test_bytes[i]);
-            // Wait long enough for the echo to complete before sending next
-            repeat (CLKS_PER_BIT * 12) @(posedge clk);
-        end
-
-        // Wait for all responses
-        repeat (CLKS_PER_BIT * 15) @(posedge clk);
-
-        // Phase 4: Check results
-        $display("\n--- Phase 4: Checking results ---");
-        if (rx_fifo.size() != N_TEST) begin
-            $display("FAIL: expected %0d replies, got %0d", N_TEST, rx_fifo.size());
+        if (rx_fifo.size() != 0) begin
+            $display("FAIL [banner]: expected fifo empty after banner, got %0d leftover byte(s)",
+                     rx_fifo.size());
             errors++;
+            while (rx_fifo.size() > 0) void'(rx_fifo.pop_front());
         end
 
-        for (int i = 0; i < N_TEST && i < rx_fifo.size(); i++) begin
-            if (rx_fifo[i] !== expect_bytes[i]) begin
-                $display("FAIL byte[%0d]: got=0x%02h  exp=0x%02h", i, rx_fifo[i], expect_bytes[i]);
-                errors++;
-            end else begin
-                $display("  OK byte[%0d] = 0x%02h ('%c')", i, rx_fifo[i], rx_fifo[i]);
-            end
+        $display("\n--- Phase 3: Send characters and check echoed case-flip ---");
+        for (int i = 0; i < N_ECHO; i++) begin
+            $display("[TB] Sending 0x%02h ('%c')", test_bytes[i], test_bytes[i]);
+            send_uart_byte(test_bytes[i]);
+            wait_for_rx_count(1, 20, $sformatf("echo %0d", i));
+            check_and_pop_byte("echo", i, expect_bytes[i]);
         end
 
-        // Summary
         $display("\n=== Test complete: %0d errors ===", errors);
         if (errors == 0) $display("ALL PASSED");
         else $display("SOME TESTS FAILED");
@@ -206,12 +254,12 @@ module cpu_uart_echo_tb;
         $finish;
     end
 
-    // Watchdog
     initial begin
-        #200ms;
+        #250ms;
         $display("FATAL: Watchdog timeout - simulation hung.");
         $dumpflush;
         $finish;
     end
 
+endmodule
 endmodule

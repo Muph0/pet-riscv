@@ -88,6 +88,14 @@ filesets:
     files:
       - tests/sample_uart_echo.bin: {file_type: user, copyto: sample_uart_echo.bin}
 
+  tb_cpu_boot_echo:
+    files:
+      - tests/cpu_boot_echo_tb.sv: {file_type: systemVerilogSource}
+
+  tb_cpu_boot_echo_data:
+    files:
+      - asm/boot_echo.bin: {file_type: user, copyto: boot_echo.bin}
+
   script_files:
     files:
       - scripts/move_waves.sh: {file_type: user}
@@ -237,6 +245,25 @@ targets:
         vsim_options:
           - "-c"
           - "-wlf cpu_uart_echo_tb.wlf"
+          - "-do 'log -r /*; run -all; quit'"
+    hooks:
+      post_run: [move_waves]
+
+  sim_cpu_boot_echo:
+    description: Run boot_echo program testbench
+    default_tool: modelsim
+    toplevel: cpu_boot_echo_tb
+    filesets:
+      - rtl
+      - tb_cpu_boot_echo
+      - tb_cpu_boot_echo_data
+    tools:
+      modelsim:
+        vlog_options:
+          - -sv
+        vsim_options:
+          - "-c"
+          - "-wlf cpu_boot_echo_tb.wlf"
           - "-do 'log -r /*; run -all; quit'"
     hooks:
       post_run: [move_waves]

@@ -157,7 +157,7 @@ endmodule
 
 
 // =============================================================================
-// Wishbone slave wrapper for UART RX + TX
+// Wishbone slave wrapper for UART RX + TX + integrated bootloader
 // =============================================================================
 module uart_wb #(
     parameter logic [31:0] BASE_ADDR = 32'h1000_0000,
@@ -165,7 +165,16 @@ module uart_wb #(
 ) (
     input rx_pin,
     output tx_pin,
-    wishbone.slave bus
+    wishbone.slave bus,
+
+    // Bootloader memory write interface
+    output [31:0] bl_mem_addr,
+    output [ 7:0] bl_mem_data,
+    output        bl_mem_write,
+
+    // Bootloader control
+    output bl_run,
+    output bl_loading
 );
 
     wire         clk = bus.clk;
@@ -186,13 +195,17 @@ module uart_wb #(
     logic [15:0] bit_len;
     // +0x10 -END-
 
-    // --- TX signals ---
+    // --- MMIO TX signals ---
     logic        tx_start;
     wire         tx_busy;
 
-    // --- RX signals ---
+    // --- Shared RX signals ---
     wire  [ 7:0] rx_byte;
     wire         rx_valid;
+
+    // --- Bootloader TX signals ---
+    wire  [ 7:0] bl_tx_data;
+    wire         bl_tx_start;
 
     // --- Sub-modules ---
     uart_rx u_rx (
@@ -204,14 +217,34 @@ module uart_wb #(
         .data_valid(rx_valid)
     );
 
+    // TX mux: bootloader owns TX before run, MMIO after
+    wire [7:0] tx_mux_data  = bl_run ? tx_data : bl_tx_data;
+    wire       tx_mux_start = bl_run ? tx_start : bl_tx_start;
+
     uart_tx u_tx (
         .clk,
         .reset,
-        .data_in   (tx_data),
-        .data_valid(tx_start),
+        .data_in   (tx_mux_data),
+        .data_valid(tx_mux_start),
         .bit_len,
         .tx0       (tx_pin),
         .busy      (tx_busy)
+    );
+
+    // --- Bootloader (shares uart_rx; uses TX for CRC response) ---
+    bootloader bl (
+        .clk,
+        .reset,
+        .uart_data (rx_byte),
+        .uart_valid(rx_valid),
+        .tx_data   (bl_tx_data),
+        .tx_start  (bl_tx_start),
+        .tx_busy   (tx_busy),
+        .mem_addr  (bl_mem_addr),
+        .mem_data  (bl_mem_data),
+        .mem_write (bl_mem_write),
+        .run       (bl_run),
+        .loading   (bl_loading)
     );
 
     // --- Wishbone handshake ---
@@ -249,8 +282,8 @@ module uart_wb #(
             control <= '0;
             bit_len <= 16'(27_000_000 / 115_200);
         end else begin
-            // Capture incoming RX byte
-            if (rx_valid) begin
+            // Capture incoming RX byte (only after bootloader is done)
+            if (rx_valid && bl_run) begin
                 rx_data   <= rx_byte;
                 status[1] <= 1'b1;
             end

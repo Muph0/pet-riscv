@@ -24,5 +24,6 @@
         <File path="src/stage05_mem.sv" type="file.verilog" enable="1"/>
         <File path="src/stage06_wb.sv" type="file.verilog" enable="1"/>
         <File path="src/rv32im.cst" type="file.cst" enable="1"/>
+        <File path="src/rv32im.sdc" type="file.sdc" enable="1"/>
     </FileList>
 </Project>
