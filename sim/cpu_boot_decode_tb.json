@@ -1,12 +1,12 @@
 {
   "extensionVersion": "1.5.2",
   "fileName": "c:\\Users\\kytka\\source\\learning\\FPGA_gowin\\rv32im\\sim\\cpu_boot_decode_tb.fst",
-  "markerTime": null,
+  "markerTime": 18519,
   "altMarkerTime": null,
   "displayTimeUnit": "ps",
   "selectedSignal": null,
   "zoomRatio": 1.1854446396599607e-7,
-  "scrollLeft": 0,
+  "scrollLeft": 10430158091,
   "displayedSignals": [
     {
       "dataType": "netlist-variable",
@@ -31,6 +31,19 @@
       "verticalScale": 1,
       "nameType": "fullPath",
       "customName": "loading",
+      "renderType": "binary",
+      "valueLinkCommand": ""
+    },
+    {
+      "dataType": "netlist-variable",
+      "netlistId": 1161,
+      "name": "cpu_boot_decode_tb.dut.pipe.hazard.halt",
+      "numberFormat": "binary",
+      "colorIndex": 0,
+      "rowHeight": 1,
+      "verticalScale": 1,
+      "nameType": "fullPath",
+      "customName": "halt",
       "renderType": "binary",
       "valueLinkCommand": ""
     },

@@ -4,7 +4,7 @@ interface stageID_face;
 
     // Pipeline control
     logic             reset;
-    logic             enable;
+    logic             advance;
 
     // Forwarding select (per source): 00=regfile, 01=EX, 10=MEM, 11=WB
     logic      [ 1:0] fw_sel1;
@@ -46,7 +46,7 @@ interface stageID_face;
     logic      [31:0] branch_target;
 
     modport in(
-        input reset, enable, fw_sel1, fw_sel2, fw_data_ex, fw_data_mem, fw_data_wb,
+        input reset, advance, fw_sel1, fw_sel2, fw_data_ex, fw_data_mem, fw_data_wb,
         output opA, opB, op_mem, alu_op, alu_negb_shar, alu_mul,
                mem_mode, mem_width, rs1, rs2, rs1_next, rs2_next,
                wb_en, rd, pc, is_branch, is_jump, branch_target
@@ -58,7 +58,7 @@ interface stageID_face;
     );
     modport hazard(
         input rs1_next, rs2_next, rd, mem_mode, wb_en,
-        output reset, enable, fw_sel1, fw_sel2
+        output reset, advance, fw_sel1, fw_sel2
     );
 
 endinterface
@@ -261,7 +261,7 @@ module stageID
             io.is_branch     <= '0;
             io.is_jump       <= '0;
             io.branch_target <= '0;
-        end else if (io.enable) begin
+        end else if (io.advance) begin
             io.opA           <= opA;
             io.opB           <= opB;
             io.op_mem        <= op_mem;

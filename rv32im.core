@@ -7,8 +7,9 @@ filesets:
   rtl:
     files:
       - src/memory/mem_pkg.sv: {file_type: systemVerilogSource}
-      - src/memory/bsram.sv: {file_type: systemVerilogSource}
-      - src/memory/wb_bsram.sv: {file_type: systemVerilogSource}
+      - src/memory/wb_dp_4Kx32b.sv: {file_type: systemVerilogSource}
+      - src/gowin_dp_4Kx32b/DPB.v: {file_type: verilogSource}
+      - src/gowin_dp_4Kx32b/gowin_dp_4Kx32b.v: {file_type: verilogSource}
       - src/alu.sv: {file_type: systemVerilogSource}
       - src/regfile.sv: {file_type: systemVerilogSource}
       - src/stage01_pc.sv: {file_type: systemVerilogSource}
@@ -78,6 +79,14 @@ filesets:
   tb_cpu_fib_data:
     files:
       - tests/sample_fib.bin: {file_type: user, copyto: sample_fib.bin}
+
+  tb_cpu_uart_echo:
+    files:
+      - tests/cpu_uart_echo_tb.sv: {file_type: systemVerilogSource}
+
+  tb_cpu_uart_echo_data:
+    files:
+      - tests/sample_uart_echo.bin: {file_type: user, copyto: sample_uart_echo.bin}
 
   script_files:
     files:
@@ -209,6 +218,25 @@ targets:
         vsim_options:
           - "-c"
           - "-wlf cpu_fib_tb.wlf"
+          - "-do 'log -r /*; run -all; quit'"
+    hooks:
+      post_run: [move_waves]
+
+  sim_cpu_uart_echo:
+    description: Run UART echo testbench
+    default_tool: modelsim
+    toplevel: cpu_uart_echo_tb
+    filesets:
+      - rtl
+      - tb_cpu_uart_echo
+      - tb_cpu_uart_echo_data
+    tools:
+      modelsim:
+        vlog_options:
+          - -sv
+        vsim_options:
+          - "-c"
+          - "-wlf cpu_uart_echo_tb.wlf"
           - "-do 'log -r /*; run -all; quit'"
     hooks:
       post_run: [move_waves]

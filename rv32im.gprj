@@ -8,9 +8,10 @@
         <File path="src/alu.sv" type="file.verilog" enable="1"/>
         <File path="src/cpu_top.sv" type="file.verilog" enable="1"/>
         <File path="src/fpga_top.sv" type="file.verilog" enable="1"/>
+        <File path="src/gowin_dp_4Kx32b/gowin_dp_4Kx32b.v" type="file.verilog" enable="1"/>
         <File path="src/hazard_ctl.sv" type="file.verilog" enable="1"/>
-        <File path="src/memory/bsram.sv" type="file.verilog" enable="1"/>
         <File path="src/memory/mem_pkg.sv" type="file.verilog" enable="1"/>
+        <File path="src/memory/wb_dp_4Kx32b.sv" type="file.verilog" enable="1"/>
         <File path="src/peri/bootloader.sv" type="file.verilog" enable="1"/>
         <File path="src/peri/bus.sv" type="file.verilog" enable="1"/>
         <File path="src/peri/uart.sv" type="file.verilog" enable="1"/>

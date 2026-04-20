@@ -25,10 +25,11 @@ module stageWB
     always_comb begin
         load_data = prev.mem_dout;
         if (prev.sign_ext) begin
-            unique case (prev.mem_width)
+            case (prev.mem_width)
                 WIDTH_8:  load_data = {{24{prev.mem_dout[7]}}, prev.mem_dout[7:0]};
                 WIDTH_16: load_data = {{16{prev.mem_dout[15]}}, prev.mem_dout[15:0]};
-                WIDTH_32: load_data = prev.mem_dout;
+                WIDTH_32: ;
+                default: ;
             endcase
         end
     end

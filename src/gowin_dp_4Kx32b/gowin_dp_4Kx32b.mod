@@ -1,0 +1,25 @@
+-series GW2A
+-device GW2A-18
+-device_version C
+-package PBGA256
+-part_number GW2A-LV18PG256C8/I7
+
+
+-mod_name Gowin_DP_4Kx32b
+-file_name gowin_dp_4Kx32b
+-path C:/Users/kytka/source/learning/FPGA_gowin/rv32im/src/gowin_dp_4Kx32b/
+-type RAM_DP
+-file_type vlg
+-bram_b true
+-dev_type GW2A-18C
+-ip_version 1.0
+-depth_0 4096
+-depth_1 4096
+-width_0 32
+-width_1 32
+-read_mode_0 bypass
+-read_mode_1 bypass
+-write_mode_0 normal
+-write_mode_1 normal
+-speed false
+-reset_mode sync

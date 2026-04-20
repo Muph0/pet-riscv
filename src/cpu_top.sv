@@ -53,10 +53,10 @@ module cpu_top (
     // =========================================================================
     // Wishbone crossbar
     // =========================================================================
-    localparam logic [31:0] ROM__ADR = 32'h0000_1000;
-    localparam logic [31:0] ROM__END = 32'h0000_1FFF;
-    localparam logic [31:0] SRAM_ADR = 32'h0000_2000;
-    localparam logic [31:0] SRAM_END = 32'h0000_2FFF;
+    localparam logic [31:0] ROM__ADR = 32'h0000_4000;
+    localparam logic [31:0] ROM__END = 32'h0000_5FFF;
+    localparam logic [31:0] SRAM_ADR = 32'h0000_8000;
+    localparam logic [31:0] SRAM_END = 32'h0000_9FFF;
     localparam logic [31:0] UART_ADR = 32'h1000_0000;
     localparam logic [31:0] UART_END = 32'h1000_000F;
     localparam logic [31:0] DDR__ADR = 32'h8000_0000;
@@ -80,7 +80,7 @@ module cpu_top (
     wishbone ddr_bus (
         .clk  (clk27),
         .reset(reset)
-    );  // S1: DDR SDRAM (null stub until DDR PHY added)
+    );  // S1: ext. DDR DRAM (null stub until DDR PHY added)
     wishbone bsram_bus (
         .clk  (clk27),
         .reset(reset)
@@ -107,29 +107,20 @@ module cpu_top (
     );
 
     // --- Slave 0: UART Wishbone wrapper ---
+    // Gate RX to idle (1) while bootloader is running so the periph
+    // does not capture bootloader traffic as application data.
     uart_wb #(
         .BASE_ADDR(UART_ADR),
         .END_ADDR (UART_END)
     ) u_uart (
-        .rx_pin(pin_rx),
+        .rx_pin(bl_run ? pin_rx : 1'b1),
         .tx_pin(pin_tx),
         .bus   (uart_bus)
     );
-    // --- Slave 2: BSRAM (data memory) ---
-    wb_bsram #(
-        .BYTES(SRAM_END - SRAM_ADR + 1)
-    ) u_bsram (
-        .bus     (bsram_bus),
-        .bl_addr ('0),
-        .bl_data ('0),
-        .bl_write(1'b0)
-    );
-
-    // --- Slave 3: IROM (instruction memory, bootloader target) ---
-    wb_bsram #(
-        .BYTES(ROM__END - ROM__ADR + 1)
-    ) u_irom (
-        .bus     (rom_bus),
+    // --- Slaves 2 & 3: Dual-port BSRAM (port A = IROM, port B = SRAM) ---
+    wb_dp_4Kx32b u_dpram (
+        .bus_a   (rom_bus),
+        .bus_b   (bsram_bus),
         .bl_addr (bl_mem_addr),
         .bl_data (bl_mem_data),
         .bl_write(bl_mem_write)

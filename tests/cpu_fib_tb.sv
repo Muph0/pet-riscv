@@ -90,9 +90,31 @@ module cpu_fib_tb;
 
     // ------------------------------------------------------------
     // Data memory read helper (word-addressed)
+    //
+    // The dual-port BSRAM is composed of 8 DPB instances, each
+    // holding 4 bits of the 32-bit word.  dpb_inst_k stores
+    // bits [4k+3 : 4k].  With BIT_WIDTH=4 the flat bit address
+    // is dpb_word * 4 + bit_within_nibble.
+    //
+    // Port B (SRAM) is mapped to the upper 2K words of the 4K
+    // RAM (addr_b MSB forced to 1), so the DPB word address for
+    // SRAM word N is 2048 + N.
     // ------------------------------------------------------------
     function automatic logic [31:0] read_dmem(input int unsigned word_idx);
-        return dut.u_bsram.memory[word_idx];
+        logic [31:0] w;
+        int dpb_word;
+        dpb_word = 2048 + word_idx;
+        for (int b = 0; b < 4; b++) begin
+            w[   b] = dut.u_dpram.ram.dpb_inst_0.mem[dpb_word*4 + b];
+            w[ 4+b] = dut.u_dpram.ram.dpb_inst_1.mem[dpb_word*4 + b];
+            w[ 8+b] = dut.u_dpram.ram.dpb_inst_2.mem[dpb_word*4 + b];
+            w[12+b] = dut.u_dpram.ram.dpb_inst_3.mem[dpb_word*4 + b];
+            w[16+b] = dut.u_dpram.ram.dpb_inst_4.mem[dpb_word*4 + b];
+            w[20+b] = dut.u_dpram.ram.dpb_inst_5.mem[dpb_word*4 + b];
+            w[24+b] = dut.u_dpram.ram.dpb_inst_6.mem[dpb_word*4 + b];
+            w[28+b] = dut.u_dpram.ram.dpb_inst_7.mem[dpb_word*4 + b];
+        end
+        return w;
     endfunction
 
     // ------------------------------------------------------------

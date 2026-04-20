@@ -75,17 +75,17 @@ module hazard_ctl (
         // IF: freeze on any stall.  Reset during halt/flush keeps the
         //     fetch state machine in S_FETCH with the bus gated off.
         sIF.reset   = reset || flush || halt;
-        sIF.enable  = !back_freeze && !front_freeze;
+        sIF.advance  = !back_freeze && !front_freeze;
 
         // ID: freeze on back stall; bubble on front stall or flush.
-        sID.reset   = reset || flush || (!back_freeze && front_freeze);
-        sID.enable  = !back_freeze && !front_freeze;
+        sID.reset    = reset || flush || (!back_freeze && front_freeze);
+        sID.advance  = !back_freeze && !front_freeze;
 
         // EX / MEM: freeze on back stall only.
-        sEX.reset   = reset;
-        sEX.enable  = !back_freeze;
-        sMEM.reset  = reset;
-        sMEM.enable = !back_freeze;
+        sEX.reset    = reset;
+        sEX.advance  = !back_freeze;
+        sMEM.reset   = reset;
+        sMEM.advance = !back_freeze;
     end
 
 endmodule

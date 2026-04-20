@@ -3,7 +3,7 @@ interface stageMEM_face;
 
     // Pipeline control
     logic          reset;
-    logic          enable;
+    logic          advance;
 
     // Data from memory and ALU (WB selects and sign-extends)
     logic   [31:0] alu_result;
@@ -20,11 +20,11 @@ interface stageMEM_face;
     logic          wb_stall;
 
     modport in(
-        input reset, enable,
+        input reset, advance,
         output alu_result, mem_dout, is_load, sign_ext, mem_width, wb_en, rd, wb_stall
     );
     modport prev(input alu_result, mem_dout, is_load, sign_ext, mem_width, wb_en, rd);
-    modport hazard(input rd, wb_en, is_load, wb_stall, output reset, enable);
+    modport hazard(input rd, wb_en, is_load, wb_stall, output reset, advance);
 
 endinterface
 
@@ -47,7 +47,7 @@ module stageMEM
     // --- Got-ack tracking (prevent re-issuing completed transactions) ---
     logic got_ack;
     always_ff @(posedge clk) begin
-        if (io.reset || io.enable) got_ack <= 1'b0;
+        if (io.reset || io.advance) got_ack <= 1'b0;
         else if (dbus.ack || dbus.err) got_ack <= 1'b1;
     end
 
@@ -115,7 +115,7 @@ module stageMEM
             io.mem_width  <= WIDTH_32;
             io.wb_en      <= '0;
             io.rd         <= '0;
-        end else if (io.enable) begin
+        end else if (io.advance) begin
             io.alu_result <= prev.alu_result;
             io.mem_dout   <= steered_rdata;
             io.is_load    <= (prev.mem_mode == MEM_LOAD_SIG || prev.mem_mode == MEM_LOAD_USIG);

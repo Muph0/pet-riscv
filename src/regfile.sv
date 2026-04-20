@@ -17,7 +17,9 @@ module regfile (
     logic [31:0] data[31:1];
 
     // Zero-init registers
+    // synthesis translate_off
     initial for (int i = 1; i < 32; i++) data[i] = '0;
+    // synthesis translate_on
 
     // Async read
     always_comb begin
