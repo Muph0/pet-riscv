@@ -5,12 +5,12 @@ pinout.md
 # Build artifacts (FuseSoC / Gowin IDE)
 /build/
 /impl/
+*tmp.v
 
 # IDE user settings
 *.gprj.user
 
 # Simulation outputs
 /sim/*
-!/sim/*.json
 
 *.bin
