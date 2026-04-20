@@ -6,6 +6,7 @@ pinout.md
 /build/
 /impl/
 *tmp.v
+__pycache__
 
 # IDE user settings
 *.gprj.user
