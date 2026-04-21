@@ -10,10 +10,14 @@
         <File path="src/fpga_top.sv" type="file.verilog" enable="1"/>
         <File path="src/gowin_dp_4Kx32b/gowin_dp_4Kx32b.v" type="file.verilog" enable="1"/>
         <File path="src/hazard_ctl.sv" type="file.verilog" enable="1"/>
+        <File path="src/memory/ddr3_memory_interface/ddr3_memory_interface.v" type="file.verilog" enable="1"/>
+        <File path="src/memory/gowin_rpll_mem/gowin_rpll.v" type="file.verilog" enable="1"/>
         <File path="src/memory/mem_pkg.sv" type="file.verilog" enable="1"/>
+        <File path="src/memory/wb_ddr3.sv" type="file.verilog" enable="1"/>
         <File path="src/memory/wb_dp_4Kx32b.sv" type="file.verilog" enable="1"/>
         <File path="src/peri/bootloader.sv" type="file.verilog" enable="1"/>
         <File path="src/peri/bus.sv" type="file.verilog" enable="1"/>
+        <File path="src/peri/businfo.sv" type="file.verilog" enable="1"/>
         <File path="src/peri/uart.sv" type="file.verilog" enable="1"/>
         <File path="src/pipeline.sv" type="file.verilog" enable="1"/>
         <File path="src/regfile.sv" type="file.verilog" enable="1"/>

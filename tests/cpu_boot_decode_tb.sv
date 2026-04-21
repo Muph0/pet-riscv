@@ -19,6 +19,9 @@ module cpu_boot_decode_tb;
     logic led4, led5;
 
     // ------------------------------------------------------------
+    wishbone ext_ddr_bus(.clk(clk), .reset(1'b0));
+    logic [1:0] ext_ddr_status = 2'b01;
+
     // Instantiate DUT
     // ------------------------------------------------------------
     cpu_top dut (
@@ -27,7 +30,9 @@ module cpu_boot_decode_tb;
         .pin_rx(pin_rx),
         .pin_tx(pin_tx),
         .led4  (led4),
-        .led5  (led5)
+        .led5  (led5),
+        .ext_ddr_bus(ext_ddr_bus),
+        .ext_ddr_status(ext_ddr_status)
     );
 
     wire loading = dut.u_uart.bl.loading;

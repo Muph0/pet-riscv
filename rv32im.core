@@ -24,7 +24,11 @@ filesets:
       - src/fpga_top.sv: {file_type: systemVerilogSource}
       - src/peri/uart.sv: {file_type: systemVerilogSource}
       - src/peri/bootloader.sv: {file_type: systemVerilogSource}
+      - src/peri/businfo.sv: {file_type: systemVerilogSource}
       - src/peri/bus.sv: {file_type: systemVerilogSource}
+      - src/memory/ddr3_memory_interface_sim.v: {file_type: verilogSource}
+      - src/memory/rPLL_sim.v: {file_type: verilogSource}
+      - src/memory/wb_ddr3.sv: {file_type: systemVerilogSource}
 
   tb_bus_xbar:
     files:

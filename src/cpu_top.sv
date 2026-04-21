@@ -6,10 +6,11 @@ module cpu_top (
     output logic pin_tx,
 
     output logic led4,
-    output logic led5
-);
+    output logic led5,
 
-    // =========================================================================
+    wishbone.master ext_ddr_bus,
+    input logic [1:0] ext_ddr_status
+);
     // Reset — POR (1 cycle) + key2 press (active low, synchronized)
     // =========================================================================
     logic por = 1'b1;
@@ -30,10 +31,12 @@ module cpu_top (
     localparam logic [31:0] ROM__END = 32'h0000_5FFF;
     localparam logic [31:0] SRAM_ADR = 32'h0000_8000;
     localparam logic [31:0] SRAM_END = 32'h0000_9FFF;
-    localparam logic [31:0] UART_ADR = 32'h1000_0000;
-    localparam logic [31:0] UART_END = 32'h1000_000F;
+    localparam logic [31:0] BUSI_ADR = 32'h1000_0000;
+    localparam logic [31:0] BUSI_END = 32'h1000_002F;
+    localparam logic [31:0] UART_ADR = 32'h1001_0000;
+    localparam logic [31:0] UART_END = 32'h1001_000F;
     localparam logic [31:0] DDR__ADR = 32'h8000_0000;
-    localparam logic [31:0] DDR__END = 32'hFFFF_FFFF;
+    localparam logic [31:0] DDR__END = 32'h87FF_FFFF;
 
     // --- Named master interfaces ---
     wishbone ibus (
@@ -46,14 +49,14 @@ module cpu_top (
     );  // M1: load/store        (idle)
 
     // --- Named slave interfaces ---
+    wishbone busi_bus (
+        .clk  (clk27),
+        .reset(reset)
+    );
     wishbone uart_bus (
         .clk  (clk27),
         .reset(reset)
     );  // S0: UART MMIO
-    wishbone ddr_bus (
-        .clk  (clk27),
-        .reset(reset)
-    );  // S1: ext. DDR DRAM (null stub until DDR PHY added)
     wishbone bsram_bus (
         .clk  (clk27),
         .reset(reset)
@@ -63,20 +66,24 @@ module cpu_top (
         .reset(reset)
     );  // S3: boot ROM          (idle stub)
 
-    // Keep DDR slave stub quiet (replace with DDR PHY when ready)
-    assign ddr_bus.stom = '0;
-    assign ddr_bus.ack  = '0;
-    assign ddr_bus.err  = '0;
-    assign ddr_bus.rty  = '0;
-
     bus_xbar_ctrl #(
         .NM     (2),
-        .NS     (4),
-        .S_START('{UART_ADR, DDR__ADR, SRAM_ADR, ROM__ADR}),
-        .S_END  ('{UART_END, DDR__END, SRAM_END, ROM__END})
+        .NS     (5),
+        .S_START('{BUSI_ADR, UART_ADR, DDR__ADR, SRAM_ADR, ROM__ADR}),
+        .S_END  ('{BUSI_END, UART_END, DDR__END, SRAM_END, ROM__END})
     ) xbar (
         .m_bus('{ibus, dbus}),
-        .s_bus('{uart_bus, ddr_bus, bsram_bus, rom_bus})
+        .s_bus('{busi_bus, uart_bus, ext_ddr_bus, bsram_bus, rom_bus})
+    );
+
+    // --- Slave: Bus Info Peripheral ---
+    logic [1:0] ddr_status; // Wait, actually ddr_status should come from wb_ddr3 via top. Let's make it an input port to cpu_top
+    businfo_wb #(
+        .BASE_ADDR(BUSI_ADR),
+        .END_ADDR (BUSI_END)
+    ) u_businfo (
+        .bus(busi_bus),
+        .ddr_status(ext_ddr_status)
     );
 
     // --- Slave 0: UART with integrated bootloader ---
