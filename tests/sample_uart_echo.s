@@ -1,6 +1,6 @@
 ; UART echo with XOR 32 (lowercase <-> uppercase toggle)
 ;
-; MMIO layout (base 0x1000_0000):
+; MMIO layout (base 0x1001_0000):
 ;   +0x0  DATA    W: TX byte, R: RX byte
 ;   +0x4  STATUS  R: bit0 = TX busy, bit1 = RX data available
 ;   +0x8  CONTROL R/W
@@ -10,7 +10,7 @@
 .def stat = reg:x2
 .def ch   = reg:x3
 
-lui  base, 10000h         ; base = 0x1000_0000
+lui  base, 10010h         ; base = 0x1001_0000
 
 poll_rx:
 lw   stat, 4(base)        ; read STATUS
