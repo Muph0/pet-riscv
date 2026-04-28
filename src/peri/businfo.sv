@@ -29,7 +29,7 @@ module businfo_wb #(
                     bus.err <= 1'b1;
                 end else begin
                     case (bus.adr - BASE_ADDR)
-                        8'h00: bus.stom <= 32'h7461626C;  // "tabl"
+                        8'h00: bus.stom <= 32'h6F666E49;  // "Info" 49 6E 66 6F
                         8'h04: bus.stom <= 32'h10000000;  // Start
                         8'h08: bus.stom <= 32'h1000002F;  // End
                         8'h0C: bus.stom <= 32'h00000000;  // Status
