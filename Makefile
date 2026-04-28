@@ -39,12 +39,15 @@ sim_bus_xbar_atomic:
 	fusesoc --cores-root . run --target sim_bus_xbar_atomic ::rv32im || true
 	rm -r build
 
-
 test_all: sim_uart_rx sim_cpu_boot_decode sim_cpu_fwd sim_cpu_lw sim_cpu_fib sim_cpu_uart_echo sim_cpu_boot_echo sim_bus_xbar sim_bus_xbar_atomic
 
 clean:
 	rm -rf build
 	rm -f tests/*.bin
 
-%.bin: %.s
+rust/%.bin:
+	cd rust ; \
+	cargo objcopy --release --bin $* -- -O binary --only-section=.text --only-section=.rodata --only-section=.data ./$*.bin
+
+asm/%.bin tests/%.bin: %.s
 	unas --arch=rv32i $< -o $@
