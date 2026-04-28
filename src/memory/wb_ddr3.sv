@@ -1,8 +1,8 @@
 module wb_ddr3 (
     input clk,  // 27MHz clock for rPLL
     wishbone.slave bus,
-    
-    output logic [1:0] ddr_status, // bit 1: busy, bit 0: init_calib_complete
+
+    output logic [1:0] ddr_status,  // bit 1: busy, bit 0: init_calib_complete
 
     // DDR3 Pins
     output logic [14-1:0] O_ddr_addr,
@@ -23,13 +23,14 @@ module wb_ddr3 (
 );
 
     wire memory_clk, pll_lock;
-    wire rst_n = ~bus.reset;  // from wishbone bus
+    wire pll_rst_n = !bus.reset;  // PLL reset: independent of pll_lock (avoids circular dep)
+    wire rst_n = pll_lock && !bus.reset;  // system reset: held low until PLL has locked
 
     // rPLL instance
-    Gowin_rPLL pll (
+    Gowin_rPLL_400 pll (
         .clkout(memory_clk),
         .lock  (pll_lock),
-        .reset (~rst_n),
+        .reset (~pll_rst_n),
         .clkin (clk)
     );
 
@@ -212,8 +213,9 @@ module wb_ddr3 (
 
     // Sync transaction_done to bus.clk
     reg done_sync1, done_sync2;
-    always_ff @(posedge bus.clk) begin
-        if (!rst_n) begin
+    wire bus_clk = bus.clk;
+    always_ff @(posedge bus_clk) begin
+        if (!pll_lock || !rst_n) begin
             done_sync1 <= 1'b0;
             done_sync2 <= 1'b0;
             bus.ack <= 1'b0;
@@ -231,8 +233,8 @@ module wb_ddr3 (
         end
     end
 
-    assign bus.err = 1'b0;
-    assign bus.rty = !init_calib_complete;  // Retry until DDR initialized TODO: switch to error - dont stall the CPU, it should poll the businfo DDR3 status instead
+    assign bus.err = !init_calib_complete;  // Error when not yet calibrated; CPU should poll businfo DDR status
+    assign bus.rty = 1'b0;
     assign ddr_status = {(state != S_IDLE), init_calib_complete};
 
 endmodule

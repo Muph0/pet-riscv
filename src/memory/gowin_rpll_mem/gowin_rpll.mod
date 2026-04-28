@@ -4,7 +4,7 @@
 -part_number GW2A-LV18PG256C8/I7
 
 
--mod_name Gowin_rPLL
+-mod_name Gowin_rPLL_400
 -file_name gowin_rpll
 -path C:/Users/JackC/Desktop/works2022/playground/gowin/ddr_18k/ddr_18k_exp/src/gowin_rpll/
 -type PLL

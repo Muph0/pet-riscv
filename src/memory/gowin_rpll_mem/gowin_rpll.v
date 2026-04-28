@@ -6,7 +6,7 @@
 //Device: GW2A-18C
 //Created Time: Fri May 06 23:06:50 2022
 
-module Gowin_rPLL (clkout, lock, reset, clkin);
+module Gowin_rPLL_400 (clkout, lock, reset, clkin);
 
 output clkout;
 output lock;
@@ -61,4 +61,4 @@ defparam rpll_inst.CLKOUTD_SRC = "CLKOUT";
 defparam rpll_inst.CLKOUTD3_SRC = "CLKOUT";
 defparam rpll_inst.DEVICE = "GW2A-18C";
 
-endmodule //Gowin_rPLL
+endmodule //Gowin_rPLL_400
