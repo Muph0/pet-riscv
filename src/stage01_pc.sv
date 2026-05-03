@@ -5,8 +5,8 @@ interface stagePC_face;
     logic        advance;  // pulse: advance PC by one instruction
 
     // Control signals
-    logic        pc_redirect;  // branch/jump redirect
-    logic [31:2] pc_target;
+    logic        pc_redirect;  // branch/jump redirect TODO: move this to ex iface
+    logic [31:2] pc_target; // TODO: move this to ex iface
 
     // ---- Outputs from the PC stage ----
     logic [31:0] pc;  // current PC value
@@ -15,6 +15,7 @@ interface stagePC_face;
     modport in(input reset, advance, pc_redirect, pc_target, output pc, pc_next);
     modport prev(input pc, pc_next);
     modport hazard(output reset, advance);
+    modport intctl(input advance);
 
 endinterface
 
@@ -24,6 +25,8 @@ module stagePC #(
 ) (
     input clk,
     stagePC_face.in io
+
+    // TODO: use EX interface to get pc_redirect and pc_target
 );
 
     assign io.pc_next = io.pc_redirect ? {io.pc_target, 2'b00} : io.pc + 4;

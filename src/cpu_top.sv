@@ -28,9 +28,9 @@ module cpu_top (
     // Wishbone crossbar
     // =========================================================================
     localparam logic [31:0] ROM__ADR = 32'h0000_4000;
-    localparam logic [31:0] ROM__END = 32'h0000_5FFF;
+    localparam logic [31:0] ROM__END = 32'h0000_7FFF;
     localparam logic [31:0] SRAM_ADR = 32'h0000_8000;
-    localparam logic [31:0] SRAM_END = 32'h0000_9FFF;
+    localparam logic [31:0] SRAM_END = 32'h0000_BFFF;
     localparam logic [31:0] BUSI_ADR = 32'h1000_0000;
     localparam logic [31:0] BUSI_END = 32'h1000_002F;
     localparam logic [31:0] UART_ADR = 32'h1001_0000;

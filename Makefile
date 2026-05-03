@@ -1,4 +1,4 @@
-.PHONY: list sim_uart_rx sim_bus_xbar sim_bus_xbar_atomic sim_cpu_boot_decode sim_cpu_fwd sim_cpu_lw sim_cpu_fib sim_cpu_uart_echo sim_cpu_boot_echo clean
+.PHONY: list sim_uart_rx sim_bus_xbar sim_bus_xbar_atomic sim_cpu_boot_decode sim_cpu_fwd sim_cpu_lw sim_cpu_fib sim_cpu_uart_echo sim_cpu_boot_echo clean rust
 
 list:
 	fusesoc --cores-root . core list || true
@@ -45,9 +45,16 @@ clean:
 	rm -rf build
 	rm -f tests/*.bin
 
-rust/%.bin:
+define rust_bin
 	cd rust ; \
-	cargo objcopy --release --bin $* -- -O binary --only-section=.text --only-section=.rodata --only-section=.data ./$*.bin
+	cargo objcopy --release --bin $(1) -- -O binary --only-section=.text --only-section=.rodata --only-section=.data ./$(1).bin
+endef
+
+rust:
+	$(call rust_bin,hello)
+	$(call rust_bin,memtest)
+
+
 
 asm/%.bin tests/%.bin: %.s
 	unas --arch=rv32i $< -o $@

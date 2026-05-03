@@ -5,7 +5,11 @@ edition = "2021"
 
 [[bin]]
 name = "hello"
-path = "src/print_main.rs"
+path = "src/main_hello.rs"
+
+[[bin]]
+name = "memtest"
+path = "src/main_memtest.rs"
 
 [dependencies]
 

@@ -2,24 +2,24 @@
 #![no_main]
 
 use core::arch::global_asm;
-use core::fmt::Write;
 use core::panic::PanicInfo;
 
 use crate::mmio::Uart;
 
 mod mmio;
+mod slimfmt;
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     let mut uart = unsafe { Uart::discover().unwrap_or(Uart::new(0x1001_0000)) };
 
-    _ = write!(uart, "Kernel panic");
-    _ = match info.location() {
-        None => writeln!(uart, ""),
-        Some(loc) => writeln!(uart, " at {loc}"),
-    };
+    write!(uart, "Kernel panic");
+    if let Some(loc) = info.location() {
+        write!(uart, " at ", loc.file(), ":", loc.line());
+    }
 
-    _ = write!(uart, "Message: {}", info.message());
+    //_ = core::fmt::write(&mut uart, format_args!("\n{}\n", info.message()));
+
     loop {}
 }
 

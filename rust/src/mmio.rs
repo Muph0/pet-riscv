@@ -3,21 +3,21 @@ const BUSINFO_BASE: *const BusInfo = 0x1000_0000 as *const _;
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct BusInfo {
-    name: [u8; 4],
-    start: usize,
-    end: usize,
-    status: u32,
+    pub name: [u8; 4],
+    pub start: usize,
+    pub end: usize,
+    pub status: u32,
 }
 
 const _: () = assert!(size_of::<usize>() == 4);
 
-pub fn bus_info() -> impl Iterator<Item = BusInfo> {
+pub fn bus_info() -> impl Iterator<Item = *const BusInfo> {
     // SAFETY: bus info must be available on the system
     let first = unsafe { BUSINFO_BASE.read() };
-    assert!(first.name == *b"Info");
+    assert!(first.name == *b"Info", "BusInfo isn't available.");
 
     let count = (first.end - first.start + 1) / size_of::<BusInfo>();
-    (0..count).map(|i| unsafe { BUSINFO_BASE.offset(i as isize).read() })
+    (0..count).map(|i| unsafe { BUSINFO_BASE.offset(i as isize) })
 }
 
 #[repr(C)]
@@ -35,8 +35,8 @@ impl Uart {
     // SAFETY: make sure that noone else is using the same uart
     pub unsafe fn discover() -> Option<Self> {
         for info in bus_info() {
-            if info.name == *b"UART" {
-                return Some(Self::new(info.start));
+            if (*info).name == *b"UART" {
+                return Some(Self::new((*info).start));
             }
         }
         None
@@ -48,7 +48,7 @@ impl Uart {
     pub fn rx_available(&self) -> bool {
         unsafe { (self.address.offset(1).read_volatile() & 2) != 0 }
     }
-    pub fn try_putc(&self, c: u8) -> bool {
+    pub fn try_putc(&mut self, c: u8) -> bool {
         if !self.tx_busy() {
             unsafe { (self.address as *mut u8).write_volatile(c) };
             true
@@ -56,21 +56,12 @@ impl Uart {
             false
         }
     }
-    pub fn try_getc(&self, c: &mut u8) -> bool {
+    pub fn try_getc(&mut self, c: &mut u8) -> bool {
         if self.rx_available() {
-            unsafe { (self.address as *mut u8).read_volatile(c) };
+            *c = unsafe { (self.address as *mut u8).read_volatile() };
             true
         } else {
             false
         }
-    }
-}
-
-impl core::fmt::Write for Uart {
-    fn write_str(&mut self, s: &str) -> core::fmt::Result {
-        for c in s.bytes() {
-            while !self.try_putc(c) {}
-        }
-        Ok(())
     }
 }

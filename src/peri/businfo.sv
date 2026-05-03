@@ -34,12 +34,12 @@ module businfo_wb #(
                         8'h08: bus.stom <= 32'h1000002F;  // End
                         8'h0C: bus.stom <= 32'h00000000;  // Status
 
-                        8'h10: bus.stom <= 32'h55415254;  // "UART"
+                        8'h10: bus.stom <= 32'h54524155;  // "UART"
                         8'h14: bus.stom <= 32'h10010000;  // Start
                         8'h18: bus.stom <= 32'h1001000F;  // End
                         8'h1C: bus.stom <= 32'h00000000;  // Status
 
-                        8'h20: bus.stom <= 32'h44445233;  // "DDR3"
+                        8'h20: bus.stom <= 32'h33524444;  // "DDR3"
                         8'h24: bus.stom <= 32'h80000000;  // Start
                         8'h28: bus.stom <= 32'h87FFFFFF;  // End
                         8'h2C: bus.stom <= {30'b0, ddr_status};  // Status
