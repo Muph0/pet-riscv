@@ -15,8 +15,8 @@ global_asm!(
     ".section .text._start",
     ".global _start",
     "_start:",
-    // initialize stack pointer to top of 16K SRAM (SRAM starts at 0x8000, +16K = 0xB000)
-    "lui sp, 0xB",
+    // initialize stack pointer to top of 16K BRAM (BRAM starts at 0x4000, +16K = 0x8000)
+    "lui sp, 0x8",
     // jump to rust main function
     "j rust_main",
 );

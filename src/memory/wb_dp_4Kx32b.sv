@@ -68,7 +68,7 @@ module wb_dp_4Kx32b (
     wire         ce_a;
     wire  [31:0] dout_a;
 
-    assign addr_a = bl_word_wr ? {1'b0, bl_word_addr[12:2]} : {1'b0, bus_a.adr[12:2]};
+    assign addr_a = bl_word_wr ? bl_word_addr[13:2] : bus_a.adr[13:2];
     assign din_a  = bl_word_wr ? bl_word : bus_a.mtos;
     assign wre_a  = bl_word_wr;  // Bus side is read-only
     assign ce_a   = bl_word_wr | wb_a_active;
@@ -120,19 +120,19 @@ module wb_dp_4Kx32b (
     always_comb begin
         if (rmw_phase) begin
             // Merge-write phase: write merged data, same address
-            addr_b = {1'b1, bus_b.adr[12:2]};
+            addr_b = bus_b.adr[13:2];
             din_b  = merged_data;
             wre_b  = 1'b1;
             ce_b   = 1'b1;
         end else if (b_partial & ~ack_b) begin
             // Partial write, read phase: issue read to get old data
-            addr_b = {1'b1, bus_b.adr[12:2]};
+            addr_b = bus_b.adr[13:2];
             din_b  = '0;
             wre_b  = 1'b0;
             ce_b   = 1'b1;
         end else begin
             // Normal operation: reads, full-word writes
-            addr_b = {1'b1, bus_b.adr[12:2]};
+            addr_b = bus_b.adr[13:2];
             din_b  = bus_b.mtos;
             wre_b  = b_is_write & b_full_word & ~ack_b;
             ce_b   = wb_b_active;

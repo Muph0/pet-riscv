@@ -2,8 +2,7 @@
 
 MEMORY
 {
-  ROM   (rx) : ORIGIN = 0x00004000, LENGTH = 8K
-  RAM  (rwx) : ORIGIN = 0x00008000, LENGTH = 8K
+  BRAM (rwx) : ORIGIN = 0x00004000, LENGTH = 16K
 }
 
 ENTRY(_start)
@@ -20,7 +19,7 @@ SECTIONS
 
     . = ALIGN(4);
     _etext = .;
-  } > ROM
+  } > BRAM
 
   /* For this simple hello program, we map DATA and BSS directly into RAM,
      but because we want to produce a flat binary uploaded to ROM, any .data
@@ -36,7 +35,7 @@ SECTIONS
     *(.sdata .sdata.*)
     . = ALIGN(4);
     edata = .;
-  } > ROM
+  } > BRAM
 
   .bss (NOLOAD) : {
     . = ALIGN(4);
@@ -46,7 +45,7 @@ SECTIONS
     *(COMMON)
     . = ALIGN(4);
     ebss = .;
-  } > RAM
+  } > BRAM
 
   /DISCARD/ : {
     *(.eh_frame)

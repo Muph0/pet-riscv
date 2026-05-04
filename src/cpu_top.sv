@@ -27,10 +27,8 @@ module cpu_top (
     // =========================================================================
     // Wishbone crossbar
     // =========================================================================
-    localparam logic [31:0] ROM__ADR = 32'h0000_4000;
-    localparam logic [31:0] ROM__END = 32'h0000_7FFF;
-    localparam logic [31:0] SRAM_ADR = 32'h0000_8000;
-    localparam logic [31:0] SRAM_END = 32'h0000_BFFF;
+    localparam logic [31:0] BRAM_ADR = 32'h0000_4000;
+    localparam logic [31:0] BRAM_END = 32'h0000_7FFF;
     localparam logic [31:0] BUSI_ADR = 32'h1000_0000;
     localparam logic [31:0] BUSI_END = 32'h1000_002F;
     localparam logic [31:0] UART_ADR = 32'h1001_0000;
@@ -39,10 +37,14 @@ module cpu_top (
     localparam logic [31:0] DDR__END = 32'h87FF_FFFF;
 
     // --- Named master interfaces ---
-    wishbone ibus (
+    wishbone core_ibus (
         .clk  (clk27),
         .reset(reset)
-    );  // M0: instruction fetch
+    );  // core Pipeline IF master
+    wishbone xbar_ibus (
+        .clk  (clk27),
+        .reset(reset)
+    );  // M0: xbar instruction fetch
     wishbone dbus (
         .clk  (clk27),
         .reset(reset)
@@ -60,20 +62,45 @@ module cpu_top (
     wishbone bsram_bus (
         .clk  (clk27),
         .reset(reset)
-    );  // S2: on-chip BSRAM
+    );  // S1: on-chip BRAM (Port B)
     wishbone rom_bus (
         .clk  (clk27),
         .reset(reset)
-    );  // S3: boot ROM
+    );  // bypassed BRAM (Port A)
+
+    // --- ibus Harvard Splitter ---
+    wire ibus_is_bram = (core_ibus.adr >= BRAM_ADR) && (core_ibus.adr <= BRAM_END);
+
+    // MUX core_ibus -> rom_bus (BRAM Port A)
+    assign rom_bus.adr = core_ibus.adr;
+    assign rom_bus.mtos = core_ibus.mtos;
+    assign rom_bus.sel = core_ibus.sel;
+    assign rom_bus.we = core_ibus.we;
+    assign rom_bus.cyc = core_ibus.cyc & ibus_is_bram;
+    assign rom_bus.stb = core_ibus.stb & ibus_is_bram;
+
+    // MUX core_ibus -> xbar_ibus (Main Crossbar)
+    assign xbar_ibus.adr = core_ibus.adr;
+    assign xbar_ibus.mtos = core_ibus.mtos;
+    assign xbar_ibus.sel = core_ibus.sel;
+    assign xbar_ibus.we = core_ibus.we;
+    assign xbar_ibus.cyc = core_ibus.cyc & ~ibus_is_bram;
+    assign xbar_ibus.stb = core_ibus.stb & ~ibus_is_bram;
+
+    // Return signals to core_ibus
+    assign core_ibus.stom = ibus_is_bram ? rom_bus.stom : xbar_ibus.stom;
+    assign core_ibus.ack = ibus_is_bram ? rom_bus.ack : xbar_ibus.ack;
+    assign core_ibus.err = ibus_is_bram ? rom_bus.err : xbar_ibus.err;
+    assign core_ibus.rty = ibus_is_bram ? rom_bus.rty : xbar_ibus.rty;
 
     bus_xbar_ctrl #(
         .NM     (2),
-        .NS     (5),
-        .S_START('{BUSI_ADR, UART_ADR, DDR__ADR, SRAM_ADR, ROM__ADR}),
-        .S_END  ('{BUSI_END, UART_END, DDR__END, SRAM_END, ROM__END})
+        .NS     (4),
+        .S_START('{BUSI_ADR, UART_ADR, DDR__ADR, BRAM_ADR}),
+        .S_END  ('{BUSI_END, UART_END, DDR__END, BRAM_END})
     ) xbar (
-        .m_bus('{ibus, dbus}),
-        .s_bus('{busi_bus, uart_bus, ext_ddr_bus, bsram_bus, rom_bus})
+        .m_bus('{xbar_ibus, dbus}),
+        .s_bus('{busi_bus, uart_bus, ext_ddr_bus, bsram_bus})
     );
 
     // --- Slave: Bus Info Peripheral ---
@@ -119,12 +146,12 @@ module cpu_top (
     // Pipeline — CPU core (connects to ibus / dbus masters)
     // =========================================================================
     pipeline #(
-        .PC_RESET(ROM__ADR)
+        .PC_RESET(BRAM_ADR)
     ) pipe (
         .clk  (clk27),
         .reset(reset),
         .halt (!bl_run),
-        .ibus (ibus),
+        .ibus (core_ibus),
         .dbus (dbus)
     );
 

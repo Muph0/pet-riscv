@@ -9,7 +9,7 @@
 li   a, 0               ; a = fib(0) = 0
 li   b, 1               ; b = fib(1) = 1
 li   cnt, 38            ; counter = 38 (pre-store fib(0) and fib(1))
-lui  ptr, 8h              ; ptr = 0x8000 (BSRAM port B base)
+lui  ptr, 6h              ; ptr = 0x6000 (BSRAM middle)
 
 sw   a, 0(ptr)          ; store fib(0)
 addi ptr, ptr, 4        ; ptr += 4
