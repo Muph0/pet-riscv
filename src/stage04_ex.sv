@@ -3,7 +3,7 @@ interface stageEX_face;
 
     // Pipeline control
     logic             reset;
-    logic             advance;
+    logic             stall;
     // Forwarding
     logic             fw_mem;
     logic             fw_wb;
@@ -31,12 +31,12 @@ interface stageEX_face;
     logic      [31:0] pc;
 
     modport in(
-        input reset, advance,
+        input reset, stall,
         output alu_result, alu_result_comb, branch_taken, branch_target,
                op_mem, mem_mode, mem_width, rs1, rs2, wb_en, rd, pc
     );
     modport prev(input alu_result, op_mem, mem_mode, mem_width, rs1, rs2, wb_en, rd, pc);
-    modport hazard(input rs1, rs2, rd, wb_en, mem_mode, branch_taken, output reset, advance);
+    modport hazard(input rs1, rs2, rd, wb_en, mem_mode, branch_taken, output reset, stall);
 
 endinterface
 
@@ -90,7 +90,7 @@ module stageEX
             io.wb_en      <= '0;
             io.rd         <= '0;
             io.pc         <= '0;
-        end else if (io.advance) begin
+        end else if (!io.stall) begin
             io.alu_result <= result;
             io.op_mem     <= sID.op_mem;
             io.mem_mode   <= sID.mem_mode;

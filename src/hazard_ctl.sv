@@ -66,26 +66,25 @@ module hazard_ctl (
     wire front_freeze = if_stall || load_stall;
 
     always_comb begin
-        // PC: advance when nothing stalls, OR on flush (branch redirect
-        //     must update PC even during a back-end stall so the target
-        //     is not lost).
-        sPC.reset   = reset;
-        sPC.advance = (!back_freeze && !front_freeze) || flush;
+        // PC: stall unless flush (branch redirect must update PC even during
+        //     a back-end stall so the target is not lost).
+        sPC.reset  = reset;
+        sPC.stall  = (back_freeze || front_freeze) && !flush;
 
         // IF: freeze on any stall.  Reset during halt/flush keeps the
         //     fetch state machine in S_FETCH with the bus gated off.
-        sIF.reset   = reset || flush || halt;
-        sIF.advance  = !back_freeze && !front_freeze;
+        sIF.reset  = reset || flush || halt;
+        sIF.stall  = back_freeze || front_freeze;
 
         // ID: freeze on back stall; bubble on front stall or flush.
-        sID.reset    = reset || flush || (!back_freeze && front_freeze);
-        sID.advance  = !back_freeze && !front_freeze;
+        sID.reset  = reset || flush || (!back_freeze && front_freeze);
+        sID.stall  = back_freeze || front_freeze;
 
         // EX / MEM: freeze on back stall only.
-        sEX.reset    = reset;
-        sEX.advance  = !back_freeze;
-        sMEM.reset   = reset;
-        sMEM.advance = !back_freeze;
+        sEX.reset  = reset;
+        sEX.stall  = back_freeze;
+        sMEM.reset = reset;
+        sMEM.stall = back_freeze;
     end
 
 endmodule

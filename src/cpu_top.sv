@@ -42,11 +42,11 @@ module cpu_top (
     wishbone ibus (
         .clk  (clk27),
         .reset(reset)
-    );  // M0: instruction fetch (idle)
+    );  // M0: instruction fetch
     wishbone dbus (
         .clk  (clk27),
         .reset(reset)
-    );  // M1: load/store        (idle)
+    );  // M1: load/store
 
     // --- Named slave interfaces ---
     wishbone busi_bus (
@@ -60,11 +60,11 @@ module cpu_top (
     wishbone bsram_bus (
         .clk  (clk27),
         .reset(reset)
-    );  // S2: on-chip BSRAM     (idle stub)
+    );  // S2: on-chip BSRAM
     wishbone rom_bus (
         .clk  (clk27),
         .reset(reset)
-    );  // S3: boot ROM          (idle stub)
+    );  // S3: boot ROM
 
     bus_xbar_ctrl #(
         .NM     (2),

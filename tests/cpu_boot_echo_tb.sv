@@ -270,4 +270,3 @@ module cpu_boot_echo_tb;
     end
 
 endmodule
-endmodule

@@ -3,7 +3,7 @@ interface stageIF_face;
 
     // Pipeline control
     logic        reset;
-    logic        advance;
+    logic        stall;
 
     // To next stage
     logic [31:0] instr;  // fetched instruction
@@ -12,9 +12,9 @@ interface stageIF_face;
     // Wishbone stall (fetch in progress)
     logic        wb_stall;
 
-    modport in(input reset, advance, output instr, pc, wb_stall);
+    modport in(input reset, stall, output instr, pc, wb_stall);
     modport prev(input instr, pc);  // "prev" as seen by the next stage
-    modport hazard(input wb_stall, output reset, advance);
+    modport hazard(input wb_stall, output reset, stall);
 
 endinterface
 
@@ -61,7 +61,7 @@ module stageIF (
                 end
 
                 S_DONE: begin
-                    if (io.advance) state <= S_FETCH;
+                    if (!io.stall) state <= S_FETCH;
                 end
             endcase
         end
@@ -72,9 +72,9 @@ module stageIF (
     // During S_DONE+enable: early-start the next fetch with prev.pc_next
     //   (the PC stage is about to advance on this same posedge).
     // Bus is gated by !io.reset so no transactions fire during halt/flush.
-    wire bus_active = ((state == S_FETCH) || (state == S_DONE && io.advance)) && !io.reset;
+    wire bus_active = ((state == S_FETCH) || (state == S_DONE && !io.stall)) && !io.reset;
 
-    assign ibus.adr    = (state == S_DONE && io.advance) ? prev.pc_next : prev.pc;
+    assign ibus.adr    = (state == S_DONE && !io.stall) ? prev.pc_next : prev.pc;
     assign ibus.mtos   = '0;
     assign ibus.sel    = 4'b1111;
     assign ibus.we     = 1'b0;

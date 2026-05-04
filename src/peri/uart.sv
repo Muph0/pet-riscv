@@ -218,7 +218,7 @@ module uart_wb #(
     );
 
     // TX mux: bootloader owns TX before run, MMIO after
-    wire [7:0] tx_mux_data  = bl_run ? tx_data : bl_tx_data;
+    wire [7:0] tx_mux_data = bl_run ? tx_data : bl_tx_data;
     wire       tx_mux_start = bl_run ? tx_start : bl_tx_start;
 
     uart_tx u_tx (
