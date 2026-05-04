@@ -45,7 +45,7 @@ fn run_test(uart: &mut Uart) -> Result<(), &'static str> {
     writeln!(*uart, "Scanning bus...");
     for info_ptr in bus_info() {
         let info = unsafe { *info_ptr };
-        writeln!(*uart, "Found ", Ascii(&info.name));
+        writeln!(*uart, "- Found \"", Ascii(&info.name), "\"");
         if info.name == *b"DDR3" {
             ddr3_opt = Some(info_ptr);
         }
@@ -60,46 +60,55 @@ fn run_test(uart: &mut Uart) -> Result<(), &'static str> {
 
     let info = unsafe { *ddr3 };
 
-    let mut head = info.start;
-    const ECHO_BY: usize = 0x100000;
-    let mut echo_marker = head + ECHO_BY;
-    let mut step = 16;
-    while head <= info.end {
-        if head >= echo_marker {
-            writeln!(*uart, "Checking 0x", head as *const u8);
-            echo_marker += ECHO_BY;
-        }
-
-        if check_failed(head) {
-            writeln!(*uart, "last=0x", head as *const u8);
-            return Err("check failed");
-        }
-
-        if head + step > info.end {
-            step = (info.end - head) >> 1;
-        } else {
-            //step += 4;
-        }
-        head += step.max(4);
-    }
+    const MAGIC: u32 = 0xDEAD_BEEF;
+    writeln!(*uart, "Pass 1 (MAGIC ^ adr)");
+    check_pass(uart, MAGIC, info)?;
+    writeln!(*uart, "Pass 2 (~MAGIC ^ adr)");
+    check_pass(uart, !MAGIC, info)?;
 
     Ok(())
 }
 
-fn check_failed(adr: usize) -> bool {
-    let ptr = adr as *mut u32;
-    const MAGIC: u32 = 0xDEADBEEF;
+fn check_pass(uart: &mut Uart, magic: u32, info: BusInfo) -> Result<(), &'static str> {
+    //const ECHO_BY: usize = 0x1_0000;
+    let clz = (info.end - info.start).leading_zeros();
+    let echo_by = (!0 >> (clz + 3)) + 1;
 
-    unsafe {
-        ptr.write_volatile(MAGIC);
-        if ptr.read_volatile() != MAGIC {
-            return true;
+    // Write pass: fill entire range with (magic ^ adr)
+    let mut adr = info.start;
+    let mut echo_marker = adr + echo_by;
+    writeln!(*uart, "  Writing...");
+    while adr <= info.end {
+        if adr >= echo_marker {
+            writeln!(*uart, "  0x", adr as *const u8);
+            echo_marker += echo_by;
         }
-        ptr.write_volatile(!MAGIC);
-        if ptr.read_volatile() != !MAGIC {
-            return true;
-        }
-    };
+        unsafe { (adr as *mut u32).write_volatile(magic ^ adr as u32) };
+        adr += 4;
+    }
 
-    false
+    // Read pass: verify entire range
+    let mut adr = info.start;
+    let mut echo_marker = adr + echo_by;
+    writeln!(*uart, "  Verifying...");
+    while adr <= info.end {
+        if adr >= echo_marker {
+            writeln!(*uart, "  0x", adr as *const u8);
+            echo_marker += echo_by;
+        }
+        let expected = magic ^ adr as u32;
+        let actual = unsafe { (adr as *mut u32).read_volatile() };
+        if actual != expected {
+            write!(*uart, "  FAIL at 0x", adr as *const u8);
+            writeln!(
+                *uart,
+                ": expected=",
+                expected as *const (), ", got=", actual as *const ()
+            );
+            return Err("check failed");
+        }
+        adr += 4;
+    }
+
+    Ok(())
 }

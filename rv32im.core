@@ -100,6 +100,14 @@ filesets:
     files:
       - asm/boot_echo.bin: {file_type: user, copyto: boot_echo.bin}
 
+  tb_cpu_memtest:
+    files:
+      - tests/cpu_memtest_tb.sv: {file_type: systemVerilogSource}
+
+  tb_cpu_memtest_data:
+    files:
+      - rust/memtest.bin: {file_type: user, copyto: memtest.bin}
+
   script_files:
     files:
       - scripts/move_waves.sh: {file_type: user}
@@ -268,6 +276,25 @@ targets:
         vsim_options:
           - "-c"
           - "-wlf cpu_boot_echo_tb.wlf"
+          - "-do 'log -r /*; run -all; quit'"
+    hooks:
+      post_run: [move_waves]
+
+  sim_cpu_memtest:
+    description: Run memtest binary against a 128 MB mock DDR3 slave
+    default_tool: modelsim
+    toplevel: cpu_memtest_tb
+    filesets:
+      - rtl
+      - tb_cpu_memtest
+      - tb_cpu_memtest_data
+    tools:
+      modelsim:
+        vlog_options:
+          - -sv
+        vsim_options:
+          - "-c"
+          - "-wlf cpu_memtest_tb.wlf"
           - "-do 'log -r /*; run -all; quit'"
     hooks:
       post_run: [move_waves]

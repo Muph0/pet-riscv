@@ -1,4 +1,4 @@
-.PHONY: list sim_uart_rx sim_bus_xbar sim_bus_xbar_atomic sim_cpu_boot_decode sim_cpu_fwd sim_cpu_lw sim_cpu_fib sim_cpu_uart_echo sim_cpu_boot_echo clean rust
+.PHONY: list sim_uart_rx sim_bus_xbar sim_bus_xbar_atomic sim_cpu_boot_decode sim_cpu_fwd sim_cpu_lw sim_cpu_fib sim_cpu_uart_echo sim_cpu_boot_echo sim_cpu_memtest clean rust
 
 RM_BUILD ?= true
 
@@ -32,6 +32,10 @@ sim_cpu_uart_echo: tests/sample_uart_echo.bin
 
 sim_cpu_boot_echo: asm/boot_echo.bin
 	fusesoc --cores-root . run --target sim_cpu_boot_echo ::rv32im || true
+	if $(RM_BUILD); then rm -rf build; fi
+
+sim_cpu_memtest: rust
+	fusesoc --cores-root . run --target sim_cpu_memtest ::rv32im || true
 	if $(RM_BUILD); then rm -rf build; fi
 
 sim_bus_xbar:

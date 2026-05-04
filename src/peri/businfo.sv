@@ -1,6 +1,7 @@
 module businfo_wb #(
-    parameter logic [31:0] BASE_ADDR = 32'h1000_0000,
-    parameter logic [31:0] END_ADDR  = 32'h1000_002F
+    parameter logic [31:0] BASE_ADDR     = 32'h1000_0000,
+    parameter logic [31:0] END_ADDR      = 32'h1000_002F,
+    parameter logic [31:0] DDR3_END_ADDR = 32'h87FF_FFFF   // override in sim for speed
 ) (
     input logic [1:0] ddr_status,
     wishbone.slave bus
@@ -41,7 +42,7 @@ module businfo_wb #(
 
                         8'h20: bus.stom <= 32'h33524444;  // "DDR3"
                         8'h24: bus.stom <= 32'h80000000;  // Start
-                        8'h28: bus.stom <= 32'h87FFFFFF;  // End
+                        8'h28: bus.stom <= DDR3_END_ADDR;  // End
                         8'h2C: bus.stom <= {30'b0, ddr_status};  // Status
 
                         default: bus.stom <= 32'h0;
