@@ -78,7 +78,7 @@ module wb_ddr3 (
         .ref_ack            (),
         .init_calib_complete(init_calib_complete),
         .clk_out            (clk_out),
-        .burst              (1'b0),
+        .burst              (1'b1),
         .ddr_rst            (),
         .O_ddr_addr         (O_ddr_addr),
         .O_ddr_ba           (O_ddr_ba),
@@ -118,32 +118,43 @@ module wb_ddr3 (
 
     // Determine target DDR block address for app_addr
     // Byte address is bus.adr (32-bit). A 128-bit block is 16 bytes.
-    // Address increments by 8 for every 16 bytes (because it's a half-word address internally by Gowin).
-    // So byte_addr / 2 gives the half word addr.
-    // However, it must be aligned to 16 bytes (8 half-words), meaning bottom 3 bits of app_addr are 0.
-    wire [27:0] target_app_addr = {1'b0, bus.adr[27:4], 3'b000};
+    // The Gowin DDR3 controller expects app_addr to be a half-word (2-byte) address.
+    // Its internal memory map is {Bank[2:0], Row[13:0], Col[9:0]}.
+    // If we map linear addresses directly to {Bank, Row, Col}, then Row[13] is mapped to
+    // linear address bit 23. If the chip only has 8K rows (13 bits), then Row[13] is invalid
+    // and causes wrap-around aliasing at 16 MB.
+    // To fix this, we permute the linear address so Bank is below Row:
+    //   Column = linear_addr[9:0]     (10 bits -> 2 KB pages)
+    //   Bank   = linear_addr[12:10]   (3 bits -> 8 banks interleaving)
+    //   Row    = linear_addr[26:13]   (14 bits, wraps at 128MB if 8K rows)
+    wire [26:0] linear_app_addr = bus.adr[27:1];
+    wire [ 2:0] ddr_bank = linear_app_addr[12:10];
+    wire [13:0] ddr_row = linear_app_addr[26:13];
+    // align column to 8 half-words (16 bytes = 128 bits)
+    wire [ 9:0] ddr_col = {linear_app_addr[9:3], 3'b000};
+
+    wire [27:0] target_app_addr = {1'b0, ddr_bank, ddr_row, ddr_col};
     assign app_addr = target_app_addr;
 
     wire [1:0] word_sel = bus.adr[3:2];
 
-    always_comb begin
-        app_data_mask = 16'hFFFF;
-        case (word_sel)
-            2'b00: app_data_mask[3:0] = ~bus.sel;
-            2'b01: app_data_mask[7:4] = ~bus.sel;
-            2'b10: app_data_mask[11:8] = ~bus.sel;
-            2'b11: app_data_mask[15:12] = ~bus.sel;
-        endcase
-    end
+    // Combinatorial mask — only used to snapshot into app_data_mask at transaction start.
+    // Never driven directly to the DDR3 port to avoid a glitch path from the bus.clk domain.
+    wire [15:0] mask_comb =
+        (word_sel == 2'b00) ? {12'hFFF, ~bus.sel}     :
+        (word_sel == 2'b01) ? {8'hFF, ~bus.sel, 4'hF} :
+        (word_sel == 2'b10) ? {4'hF, ~bus.sel, 8'hFF} :
+                              {~bus.sel, 12'hFFF};
 
-    reg        transaction_done;
+    reg transaction_done;
     reg [31:0] latched_rdata;
 
     always_ff @(posedge clk_out) begin
         if (!rst_n || !init_calib_complete) begin
-            state <= S_IDLE;
-            app_cmd_en <= 1'b0;
-            app_wren <= 1'b0;
+            state            <= S_IDLE;
+            app_cmd_en       <= 1'b0;
+            app_wren         <= 1'b0;
+            app_data_mask    <= 16'hFFFF;
             transaction_done <= 1'b0;
         end else begin
             case (state)
@@ -153,6 +164,7 @@ module wb_ddr3 (
                     if (stb_sync2 && !transaction_done) begin
                         if (bus.we) begin
                             app_data <= {4{bus.mtos}};
+                            app_data_mask <= mask_comb;  // snapshot mask once; stable for S_CMD_WRITE
                             state <= S_CMD_WRITE;
                         end else begin
                             state <= S_CMD_READ;

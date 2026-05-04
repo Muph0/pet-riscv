@@ -60,11 +60,10 @@ fn run_test(uart: &mut Uart) -> Result<(), &'static str> {
 
     let info = unsafe { *ddr3 };
 
-    const MAGIC: u32 = 0xDEAD_BEEF;
-    writeln!(*uart, "Pass 1 (MAGIC ^ adr)");
-    check_pass(uart, MAGIC, info)?;
-    writeln!(*uart, "Pass 2 (~MAGIC ^ adr)");
-    check_pass(uart, !MAGIC, info)?;
+    writeln!(*uart, "Pass 1 enc(adr)");
+    check_pass(uart, 0, info)?;
+    writeln!(*uart, "Pass 2 !enc(adr)");
+    check_pass(uart, !0, info)?;
 
     Ok(())
 }
@@ -83,32 +82,56 @@ fn check_pass(uart: &mut Uart, magic: u32, info: BusInfo) -> Result<(), &'static
             writeln!(*uart, "  0x", adr as *const u8);
             echo_marker += echo_by;
         }
-        unsafe { (adr as *mut u32).write_volatile(magic ^ adr as u32) };
+        unsafe { (adr as *mut u32).write_volatile(magic ^ encode(adr as u32)) };
         adr += 4;
     }
 
     // Read pass: verify entire range
     let mut adr = info.start;
     let mut echo_marker = adr + echo_by;
+    let mut errors = 0;
     writeln!(*uart, "  Verifying...");
-    while adr <= info.end {
+    while adr <= info.end && errors < 100 {
         if adr >= echo_marker {
             writeln!(*uart, "  0x", adr as *const u8);
             echo_marker += echo_by;
         }
-        let expected = magic ^ adr as u32;
+        let expected = magic ^ encode(adr as u32);
         let actual = unsafe { (adr as *mut u32).read_volatile() };
         if actual != expected {
             write!(*uart, "  FAIL at 0x", adr as *const u8);
             writeln!(
                 *uart,
                 ": expected=",
-                expected as *const (), ", got=", actual as *const ()
+                expected as *const (),
+                ", got=",
+                actual as *const (),
+                " @",
+                decode(magic ^ actual) as *const ()
             );
-            return Err("check failed");
+            errors += 1;
         }
         adr += 4;
     }
 
-    Ok(())
+    match errors {
+        0 => Ok(()),
+        _ => Err("check failed"),
+    }
+}
+
+fn encode(mut x: u32) -> u32 {
+    x = ((x >> 16) ^ x).wrapping_mul(0x45d9f3b);
+    x = ((x >> 16) ^ x).wrapping_mul(0x45d9f3b);
+    x = (x >> 16) ^ x;
+    x
+}
+
+fn decode(mut x: u32) -> u32 {
+    x = (x >> 16) ^ x;
+    x = x.wrapping_mul(0x119de1f3);
+    x = (x >> 16) ^ x;
+    x = x.wrapping_mul(0x119de1f3);
+    x = (x >> 16) ^ x;
+    x
 }
